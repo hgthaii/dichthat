@@ -1,13 +1,42 @@
 {
-  "manifest_version": 3,
-  "name": "dichthat",
-  "version": "1.0",
-  "description": "Select text → dịch ngay",
-  "permissions": ["contextMenus", "scripting", "activeTab"],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "action": {
-    "default_title": "dichthat"
-  }
+	"manifest_version": 3,
+	"name": "dichthat",
+	"version": "1.0.0",
+	"description": "Select text → Translate now",
+	"permissions": [
+		"contextMenus",
+		"scripting",
+		"activeTab",
+		"storage"
+	],
+	"background": {
+		"service_worker": "background.js"
+	},
+	"action": {
+		"default_title": "dichthat"
+	},
+	"web_accessible_resources": [
+		{
+			"resources": [
+				"image/logo.png"
+			],
+			"matches": [
+				"<all_urls>"
+			]
+		}
+	],
+	"icons": {
+		"16": "image/logo.png",
+		"32": "image/logo.png",
+		"48": "image/logo.png",
+		"128": "image/logo.png"
+	},
+	"commands": {
+		"translate-selection": {
+			"suggested_key": {
+				"default": "Alt+W"
+			},
+			"description": "Translate text selected"
+		}
+	}
 }
