@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "dichthat",
+  "version": "1.0",
+  "description": "Select text → dịch ngay",
+  "permissions": ["contextMenus", "scripting", "activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "dichthat"
+  }
+}
