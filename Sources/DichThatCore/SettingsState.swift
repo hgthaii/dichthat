@@ -1,0 +1,69 @@
+public enum SelectionObservationEffect: Equatable, Sendable {
+    case none
+    case startMonitoring
+    case stopAndHide
+    case remainStoppedPermissionRequired
+}
+
+public enum SelectionIconSettingsStatus: Equatable, Sendable {
+    case monitoring
+    case permissionRequired
+    case monitorUnavailable
+    case disabled
+}
+
+public struct SettingsState: Equatable, Sendable {
+    public private(set) var accessibilityGranted: Bool
+    public private(set) var shortcutDisplay: String
+    public private(set) var shortcutError: String?
+    public private(set) var showSelectionIcon: Bool
+    public private(set) var selectionIconStatus: SelectionIconSettingsStatus
+
+    public init(
+        accessibilityGranted: Bool,
+        shortcutDisplay: String,
+        shortcutError: String? = nil,
+        showSelectionIcon: Bool,
+        selectionIconStatus: SelectionIconSettingsStatus = .disabled
+    ) {
+        self.accessibilityGranted = accessibilityGranted
+        self.shortcutDisplay = shortcutDisplay
+        self.shortcutError = shortcutError
+        self.showSelectionIcon = showSelectionIcon
+        self.selectionIconStatus = selectionIconStatus
+    }
+
+    public mutating func refreshPermission(
+        granted: Bool
+    ) -> SelectionObservationEffect {
+        accessibilityGranted = granted
+        guard showSelectionIcon else {
+            selectionIconStatus = .disabled
+            return .stopAndHide
+        }
+        selectionIconStatus = granted ? .monitoring : .permissionRequired
+        return granted ? .startMonitoring : .stopAndHide
+    }
+
+    public mutating func updateShortcut(display: String, error: String? = nil) {
+        shortcutDisplay = display
+        shortcutError = error
+    }
+
+    public mutating func setShowSelectionIcon(
+        _ isEnabled: Bool
+    ) -> SelectionObservationEffect {
+        guard isEnabled != showSelectionIcon else { return .none }
+        showSelectionIcon = isEnabled
+        guard isEnabled else {
+            selectionIconStatus = .disabled
+            return .stopAndHide
+        }
+        selectionIconStatus = accessibilityGranted ? .monitoring : .permissionRequired
+        return accessibilityGranted ? .startMonitoring : .remainStoppedPermissionRequired
+    }
+
+    public mutating func updateSelectionIconStatus(_ status: SelectionIconSettingsStatus) {
+        selectionIconStatus = showSelectionIcon ? status : .disabled
+    }
+}

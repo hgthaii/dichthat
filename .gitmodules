@@ -1,0 +1,3 @@
+[submodule ".ai/workflow/agentic-dev-workflow"]
+	path = .ai/workflow/agentic-dev-workflow
+	url = git@github.com:hgthaii/agentic-dev-workflow.git
