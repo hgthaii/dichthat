@@ -16,7 +16,17 @@ let package = Package(
         .target(name: "DichThatCore"),
         .executableTarget(
             name: "DichThatApp",
-            dependencies: ["DichThatCore"]
+            dependencies: ["DichThatCore"],
+            swiftSettings: [
+                // AppKit invokes Objective-C entry points on the main thread
+                // without entering a Swift task executor. Static actor
+                // isolation remains enforced; unsafe callback boundaries are
+                // bridged explicitly before touching main-actor state.
+                .unsafeFlags([
+                    "-Xfrontend",
+                    "-disable-dynamic-actor-isolation",
+                ]),
+            ]
         ),
         .testTarget(
             name: "DichThatCoreTests",

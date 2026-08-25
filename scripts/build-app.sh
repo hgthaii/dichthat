@@ -7,6 +7,10 @@ scratch_path="/private/tmp/dichthat-swiftpm"
 output_root="/private/tmp/dichthat-app"
 app_path="${output_root}/DichThat.app"
 
+CLANG_MODULE_CACHE_PATH="/private/tmp/dichthat-icon-clang-cache" \
+SWIFTPM_MODULECACHE_OVERRIDE="/private/tmp/dichthat-icon-swift-cache" \
+xcrun swift "${repository_root}/scripts/generate-app-icon.swift" "${repository_root}"
+
 swift build \
     --package-path "${repository_root}" \
     --scratch-path "${scratch_path}" \
