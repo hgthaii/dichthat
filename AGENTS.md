@@ -75,10 +75,10 @@ Do not scatter product constants or user-facing strings through controllers.
 
 - App-only layout and timing: `Sources/DichThatApp/Configuration/AppConfiguration.swift`
 - Core limits and endpoints: `Sources/DichThatCore/Configuration/CoreConfiguration.swift`
-- Product identity and version: `Sources/DichThatCore/Configuration/AppIdentity.swift`
+- Product identity: `Sources/DichThatCore/Configuration/AppIdentity.swift`
 - User-facing strings: `Sources/DichThatCore/Configuration/AppText.swift`
 
-When the app version changes, keep `AppIdentity.currentVersion` and `Resources/Info.plist` synchronized. Release tags use the form `vX.Y.Z` and must match that version.
+Release tags use the form `vX.Y.Z` and are the only source of release versions. Build scripts inject the tag version into the app bundle; do not hard-code release versions in Swift or source `Info.plist`.
 
 ## Validation
 
@@ -106,7 +106,9 @@ dist/DichThat-X.Y.Z.dmg
 
 ## CI/CD and releases
 
-`.github/workflows/release.yml` runs tests and builds a verified app artifact for pushes and pull requests. Manual runs and version tags also build a DMG; `vX.Y.Z` tags create a GitHub Release.
+`.github/workflows/release.yml` runs tests and builds a verified app artifact for pushes and pull requests. `vX.Y.Z` tags build a DMG, a Sparkle update archive and appcast, then create a GitHub Release.
+
+Sparkle update archives are signed with EdDSA. Never write the private key to the repository or logs; CI reads it only from the `SPARKLE_EDDSA_PRIVATE_KEY` GitHub Secret.
 
 Current local and CI builds use ad-hoc signing. Do not describe them as Developer ID signed or notarized until certificate signing, notarization, and stapling are actually configured and verified.
 

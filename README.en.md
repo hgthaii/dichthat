@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/macOS-13%2B-000000?logo=apple&logoColor=white" alt="macOS 13+">
   <img src="https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white" alt="Swift 6.0">
   <img src="https://img.shields.io/badge/translation-VI%20%E2%86%94%20EN-34C759" alt="Vietnamese and English">
-  <img src="https://img.shields.io/badge/version-0.1.0-8E8E93" alt="Version 0.1.0">
+  <img src="https://img.shields.io/github/v/release/hgthaii/dichthat?display_name=tag&sort=semver" alt="Latest release">
   <a href="https://github.com/hgthaii/dichthat/actions/workflows/release.yml"><img src="https://github.com/hgthaii/dichthat/actions/workflows/release.yml/badge.svg" alt="CI/CD"></a>
 </p>
 
@@ -34,6 +34,7 @@ It automatically detects English or Vietnamese and translates into the other lan
 - See pronunciation, meanings, examples, and synonyms for English words.
 - Listen using voices available on macOS.
 - Start automatically when you sign in, if enabled.
+- Download and install new versions directly from the app.
 - Clean interface with Light Mode and Dark Mode support.
 
 ## How to use

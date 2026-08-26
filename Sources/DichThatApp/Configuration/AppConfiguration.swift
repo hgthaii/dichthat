@@ -23,9 +23,6 @@ enum AppConfiguration {
         static let messagingTimeout: Float = 0.2
         static let permissionRefreshAttempts = 120
         static let permissionRefreshInterval = Duration.milliseconds(500)
-        static let settingsURL = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-        )!
     }
 
     enum Clipboard {
@@ -91,20 +88,20 @@ enum AppConfiguration {
     }
 
     enum Settings {
-        static let windowWidth: CGFloat = 560
-        static let windowHeight: CGFloat = 420
+        static let windowWidth: CGFloat = 480
+        static let windowHeight: CGFloat = 400
         static let contentInset: CGFloat = 24
         static let sectionSpacing: CGFloat = 18
-        static let rowHeight: CGFloat = 58
+        static let rowHeight: CGFloat = 64
         static let cardRadius: CGFloat = 10
-        static let permissionHeight: CGFloat = 92
-        static let shortcutHeight: CGFloat = 142
-        static let sidebarWidth: CGFloat = 156
-        static let sidebarInset: CGFloat = 10
-        static let sidebarButtonHeight: CGFloat = 30
+        static let permissionHeight: CGFloat = 54
+        static let shortcutHeight: CGFloat = 112
+        static let tabWidth: CGFloat = 74
+        static let tabHeight: CGFloat = 28
+        static let headerHeight: CGFloat = 76
         static let toggleWidth: CGFloat = 36
         static let toggleHeight: CGFloat = 20
         static let toggleInset: CGFloat = 2
-        static let aboutIconSize: CGFloat = 72
+        static let aboutIconSize: CGFloat = 52
     }
 }

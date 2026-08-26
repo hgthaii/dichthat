@@ -8,7 +8,7 @@ enum BugReportDiagnosticsCollector {
         launchAtLoginEnabled: Bool
     ) -> URL? {
         BugReportBuilder.issueURL(context: BugReportContext(
-            appVersion: AppIdentity.currentVersion,
+            appVersion: "\(AppMetadata.version) (\(AppMetadata.build))",
             operatingSystem: ProcessInfo.processInfo.operatingSystemVersionString,
             architecture: architecture,
             accessibilityGranted: AXIsProcessTrusted(),

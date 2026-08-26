@@ -28,7 +28,7 @@ final class AppToggleButton: NSButton {
         let track = bounds
         let radius = track.height / 2
         let trackColor: NSColor = state == .on
-            ? .controlAccentColor
+            ? SettingsAppearance.active
             : .separatorColor
         trackColor.setFill()
         NSBezierPath(roundedRect: track, xRadius: radius, yRadius: radius).fill()

@@ -17,30 +17,28 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let launchAtLoginToggle = AppToggleButton()
     private let updateButton = NSButton()
     private let reportBugButton = NSButton()
-    private let updateStatusLabel = NSTextField(wrappingLabelWithString: "")
     private var isPresented = false
-    private var releaseURL: URL?
     private var currentShortcutDisplay = ""
     private var launchAtLoginEnabled = false
+    private let appVersion: String
 
     private let onGrantPermission: @MainActor () -> Void
-    private let onOpenPermissionSettings: @MainActor () -> Void
     private let onCommitShortcut: @MainActor (KeyboardShortcut) -> String?
     private let onToggleLaunchAtLogin: @MainActor (Bool) -> Void
-    private let onCheckForUpdates: @Sendable () async -> UpdateCheckResult
+    private let onCheckForUpdates: @MainActor () -> Void
     private let onDismiss: @MainActor () -> Void
 
     init(
         onGrantPermission: @escaping @MainActor () -> Void,
-        onOpenPermissionSettings: @escaping @MainActor () -> Void,
+        appVersion: String,
         onCommitShortcut: @escaping @MainActor (KeyboardShortcut) -> String?,
         onToggleSelectionIcon: @escaping @MainActor (Bool) -> Void,
         onToggleLaunchAtLogin: @escaping @MainActor (Bool) -> Void,
-        onCheckForUpdates: @escaping @Sendable () async -> UpdateCheckResult,
+        onCheckForUpdates: @escaping @MainActor () -> Void,
         onDismiss: @escaping @MainActor () -> Void
     ) {
         self.onGrantPermission = onGrantPermission
-        self.onOpenPermissionSettings = onOpenPermissionSettings
+        self.appVersion = appVersion
         self.onCommitShortcut = onCommitShortcut
         _ = onToggleSelectionIcon
         self.onToggleLaunchAtLogin = onToggleLaunchAtLogin
@@ -55,11 +53,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
                     height: AppConfiguration.Settings.windowHeight
                 )
             ),
-            styleMask: [.titled, .closable],
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = AppText.Settings.windowTitle
+        window.titlebarAppearsTransparent = true
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
         window.center()
         super.init(window: window)
@@ -106,27 +107,55 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func configureContent() {
-        guard let root = window?.contentView else { return }
+        guard let window else { return }
+        let root = NSVisualEffectView()
+        root.material = .popover
+        root.blendingMode = .behindWindow
+        root.state = .active
+        window.contentView = root
         configureTab(generalTab, title: AppText.Settings.general, action: #selector(showGeneral))
         configureTab(aboutTab, title: AppText.Settings.about, action: #selector(showAbout))
         let tabs = NSStackView(views: [generalTab, aboutTab])
         tabs.orientation = .horizontal
-        tabs.spacing = 4
+        tabs.spacing = 0
         tabs.translatesAutoresizingMaskIntoConstraints = false
+
+        let tabBackground = NSView()
+        tabBackground.wantsLayer = true
+        tabBackground.layer?.cornerRadius = 7
+        tabBackground.layer?.borderWidth = 1
+        tabBackground.layer?.backgroundColor = SettingsAppearance.controlBackground.cgColor
+        tabBackground.layer?.borderColor = SettingsAppearance.border.cgColor
+        tabBackground.translatesAutoresizingMaskIntoConstraints = false
+        tabBackground.addSubview(tabs)
+
+        let separator = NSView()
+        separator.wantsLayer = true
+        separator.layer?.backgroundColor = SettingsAppearance.divider.cgColor
+        separator.translatesAutoresizingMaskIntoConstraints = false
         contentHost.translatesAutoresizingMaskIntoConstraints = false
-        root.addSubview(tabs)
+        root.addSubview(tabBackground)
+        root.addSubview(separator)
         root.addSubview(contentHost)
         NSLayoutConstraint.activate([
-            tabs.topAnchor.constraint(equalTo: root.topAnchor, constant: 18),
-            tabs.centerXAnchor.constraint(equalTo: root.centerXAnchor),
-            generalTab.widthAnchor.constraint(equalToConstant: 92),
-            generalTab.heightAnchor.constraint(equalToConstant: 28),
-            aboutTab.widthAnchor.constraint(equalToConstant: 92),
-            aboutTab.heightAnchor.constraint(equalToConstant: 28),
+            tabBackground.topAnchor.constraint(equalTo: root.topAnchor, constant: 40),
+            tabBackground.centerXAnchor.constraint(equalTo: root.centerXAnchor),
+            tabs.leadingAnchor.constraint(equalTo: tabBackground.leadingAnchor, constant: 1),
+            tabs.trailingAnchor.constraint(equalTo: tabBackground.trailingAnchor, constant: -1),
+            tabs.topAnchor.constraint(equalTo: tabBackground.topAnchor, constant: 1),
+            tabs.bottomAnchor.constraint(equalTo: tabBackground.bottomAnchor, constant: -1),
+            generalTab.widthAnchor.constraint(equalToConstant: AppConfiguration.Settings.tabWidth),
+            generalTab.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.tabHeight),
+            aboutTab.widthAnchor.constraint(equalToConstant: AppConfiguration.Settings.tabWidth),
+            aboutTab.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.tabHeight),
+            separator.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            separator.topAnchor.constraint(equalTo: root.topAnchor, constant: AppConfiguration.Settings.headerHeight),
+            separator.heightAnchor.constraint(equalToConstant: 1),
             contentHost.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 24),
             contentHost.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -24),
-            contentHost.topAnchor.constraint(equalTo: tabs.bottomAnchor, constant: 18),
-            contentHost.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -22),
+            contentHost.topAnchor.constraint(equalTo: separator.bottomAnchor),
+            contentHost.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -20),
         ])
 
         configureGeneralView()
@@ -152,19 +181,21 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         configureErrorLabel(startupErrorLabel)
         configurePermissionCard()
 
-        let shortcutCard = makeShortcutCard()
-        let loginCard = makeLoginCard()
-        let arranged = [permissionCard, shortcutCard, shortcutErrorLabel, loginCard, startupErrorLabel]
+        let shortcutSection = makeShortcutSection()
+        let loginSection = makeLoginSection()
+        let arranged = [
+            permissionCard, shortcutSection, shortcutErrorLabel, loginSection, startupErrorLabel,
+        ]
         let stack = NSStackView(views: arranged)
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 12
+        stack.spacing = AppConfiguration.Settings.sectionSpacing
         stack.translatesAutoresizingMaskIntoConstraints = false
         generalView.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: generalView.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: generalView.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: generalView.topAnchor),
+            stack.topAnchor.constraint(equalTo: generalView.topAnchor, constant: 24),
         ] + arranged.map { $0.widthAnchor.constraint(equalTo: stack.widthAnchor) })
     }
 
@@ -179,15 +210,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             target: self,
             action: #selector(grantPermission)
         )
-        let open = NSButton(
-            title: AppText.Settings.openSettings,
-            target: self,
-            action: #selector(openPermissionSettings)
-        )
-        let buttons = NSStackView(views: [grant, open])
-        buttons.orientation = .horizontal
-        buttons.spacing = 6
-        let row = NSStackView(views: [icon, title, NSView(), buttons])
+        let row = NSStackView(views: [icon, title, NSView(), grant])
         row.orientation = .horizontal
         row.alignment = .centerY
         row.spacing = 9
@@ -197,14 +220,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             row.leadingAnchor.constraint(equalTo: permissionCard.leadingAnchor, constant: 14),
             row.trailingAnchor.constraint(equalTo: permissionCard.trailingAnchor, constant: -14),
             row.centerYAnchor.constraint(equalTo: permissionCard.centerYAnchor),
-            permissionCard.heightAnchor.constraint(equalToConstant: 56),
+            permissionCard.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.permissionHeight),
             icon.widthAnchor.constraint(equalToConstant: 16),
             icon.heightAnchor.constraint(equalToConstant: 16),
         ])
     }
 
-    private func makeShortcutCard() -> NSVisualEffectView {
-        let card = makeCard()
+    private func makeShortcutSection() -> NSView {
+        let section = NSView()
         let title = NSTextField(labelWithString: AppText.Settings.shortcutTitle)
         title.font = .systemFont(ofSize: 13, weight: .medium)
         let subtitle = NSTextField(labelWithString: AppText.Settings.shortcutSubtitle)
@@ -216,23 +239,32 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         heading.spacing = 1
         heading.translatesAutoresizingMaskIntoConstraints = false
         shortcutEditor.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(heading)
-        card.addSubview(shortcutEditor)
+        let separator = NSView()
+        separator.wantsLayer = true
+        separator.layer?.backgroundColor = SettingsAppearance.divider.cgColor
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        section.addSubview(heading)
+        section.addSubview(shortcutEditor)
+        section.addSubview(separator)
         NSLayoutConstraint.activate([
-            heading.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
-            heading.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
-            heading.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
-            shortcutEditor.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
-            shortcutEditor.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
-            shortcutEditor.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 8),
-            shortcutEditor.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -10),
-            card.heightAnchor.constraint(equalToConstant: 104),
+            heading.leadingAnchor.constraint(equalTo: section.leadingAnchor),
+            heading.trailingAnchor.constraint(equalTo: section.trailingAnchor),
+            heading.topAnchor.constraint(equalTo: section.topAnchor),
+            shortcutEditor.leadingAnchor.constraint(equalTo: section.leadingAnchor),
+            shortcutEditor.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 10),
+            shortcutEditor.widthAnchor.constraint(equalToConstant: 320),
+            shortcutEditor.heightAnchor.constraint(equalToConstant: 42),
+            separator.leadingAnchor.constraint(equalTo: section.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: section.trailingAnchor),
+            separator.bottomAnchor.constraint(equalTo: section.bottomAnchor),
+            separator.heightAnchor.constraint(equalToConstant: 1),
+            section.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.shortcutHeight),
         ])
-        return card
+        return section
     }
 
-    private func makeLoginCard() -> NSVisualEffectView {
-        let card = makeCard()
+    private func makeLoginSection() -> NSView {
+        let section = NSView()
         let title = NSTextField(labelWithString: AppText.Settings.launchAtLoginTitle)
         title.font = .systemFont(ofSize: 13, weight: .medium)
         let subtitle = NSTextField(labelWithString: AppText.Settings.launchAtLoginSubtitle)
@@ -246,61 +278,64 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         row.orientation = .horizontal
         row.alignment = .centerY
         row.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(row)
+        section.addSubview(row)
         NSLayoutConstraint.activate([
-            row.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
-            row.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
-            row.centerYAnchor.constraint(equalTo: card.centerYAnchor),
-            card.heightAnchor.constraint(equalToConstant: 58),
+            row.leadingAnchor.constraint(equalTo: section.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: section.trailingAnchor),
+            row.topAnchor.constraint(equalTo: section.topAnchor, constant: 3),
+            section.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.rowHeight),
         ])
-        return card
+        return section
     }
 
     private func configureAboutView() {
         let icon = NSImageView(image: NSImage(named: NSImage.applicationIconName) ?? NSImage())
         icon.imageScaling = .scaleProportionallyUpOrDown
         let name = NSTextField(labelWithString: AppIdentity.productName)
-        name.font = .systemFont(ofSize: 21, weight: .semibold)
-        let version = NSTextField(labelWithString: "\(AppText.Settings.versionPrefix) \(AppIdentity.currentVersion)")
+        name.font = .systemFont(ofSize: 16, weight: .semibold)
+        let version = NSTextField(labelWithString: "\(AppText.Settings.versionPrefix) \(appVersion)")
+        version.font = .systemFont(ofSize: 11)
         version.textColor = .secondaryLabelColor
         let description = NSTextField(wrappingLabelWithString: AppText.Settings.aboutDescription)
         description.alignment = .center
+        description.font = .systemFont(ofSize: 12)
         description.textColor = .secondaryLabelColor
         updateButton.title = AppText.Settings.checkForUpdates
         updateButton.target = self
         updateButton.action = #selector(checkForUpdates)
+        updateButton.controlSize = .small
+        updateButton.font = .systemFont(ofSize: 12)
         reportBugButton.title = AppText.Settings.reportABug
         reportBugButton.target = self
         reportBugButton.action = #selector(reportBug)
+        reportBugButton.controlSize = .small
+        reportBugButton.font = .systemFont(ofSize: 12)
         let actions = NSStackView(views: [updateButton, reportBugButton])
         actions.orientation = .horizontal
         actions.spacing = 8
-        updateStatusLabel.alignment = .center
-        updateStatusLabel.font = .systemFont(ofSize: 11)
-        updateStatusLabel.textColor = .secondaryLabelColor
         let copyright = NSTextField(labelWithString: AppIdentity.copyright)
+        copyright.font = .systemFont(ofSize: 10)
         copyright.textColor = .tertiaryLabelColor
         let stack = NSStackView(views: [
-            icon, name, version, description, actions, updateStatusLabel, copyright,
+            icon, name, version, description, actions, copyright,
         ])
         stack.orientation = .vertical
         stack.alignment = .centerX
-        stack.spacing = 8
+        stack.spacing = 2
+        stack.setCustomSpacing(16, after: icon)
+        stack.setCustomSpacing(2, after: name)
+        stack.setCustomSpacing(16, after: version)
+        stack.setCustomSpacing(18, after: description)
+        stack.setCustomSpacing(18, after: actions)
         stack.translatesAutoresizingMaskIntoConstraints = false
         aboutView.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.centerXAnchor.constraint(equalTo: aboutView.centerXAnchor),
-            stack.centerYAnchor.constraint(equalTo: aboutView.centerYAnchor),
-            stack.widthAnchor.constraint(lessThanOrEqualToConstant: 380),
-            icon.widthAnchor.constraint(equalToConstant: 68),
-            icon.heightAnchor.constraint(equalToConstant: 68),
+            stack.centerYAnchor.constraint(equalTo: aboutView.centerYAnchor, constant: -4),
+            description.widthAnchor.constraint(equalToConstant: 300),
+            icon.widthAnchor.constraint(equalToConstant: AppConfiguration.Settings.aboutIconSize),
+            icon.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.aboutIconSize),
         ])
-    }
-
-    private func makeCard() -> NSVisualEffectView {
-        let card = NSVisualEffectView()
-        styleCard(card)
-        return card
     }
 
     private func styleCard(_ card: NSVisualEffectView) {
@@ -329,7 +364,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         button.action = action
         button.isBordered = false
         button.wantsLayer = true
-        button.layer?.cornerRadius = 7
+        button.layer?.cornerRadius = 6
     }
 
     private func show(page: Page) {
@@ -341,13 +376,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private func updateTabAppearance(_ button: NSButton, selected: Bool) {
         button.layer?.backgroundColor = (
-            selected ? NSColor.selectedContentBackgroundColor : NSColor.clear
+            selected ? SettingsAppearance.selectedControlBackground : NSColor.clear
         ).cgColor
         button.attributedTitle = NSAttributedString(
             string: button.title,
             attributes: [
                 .font: NSFont.systemFont(ofSize: 13, weight: .medium),
-                .foregroundColor: selected ? NSColor.white : NSColor.labelColor,
+                .foregroundColor: selected ? NSColor.labelColor : NSColor.secondaryLabelColor,
             ]
         )
     }
@@ -356,7 +391,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     @objc private func showAbout() { show(page: .about) }
 
     @objc private func grantPermission() { onGrantPermission() }
-    @objc private func openPermissionSettings() { onOpenPermissionSettings() }
     @objc private func toggleLaunchAtLogin() {
         onToggleLaunchAtLogin(launchAtLoginToggle.state == .on)
     }
@@ -370,29 +404,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     @objc private func checkForUpdates() {
-        if let releaseURL {
-            NSWorkspace.shared.open(releaseURL)
-            return
-        }
-        updateButton.isEnabled = false
-        updateButton.title = AppText.Settings.checkingForUpdates
-        updateStatusLabel.stringValue = ""
-        Task { [weak self] in
-            guard let self else { return }
-            let result = await onCheckForUpdates()
-            updateButton.isEnabled = true
-            switch result {
-            case .upToDate:
-                updateButton.title = AppText.Settings.checkForUpdates
-                updateStatusLabel.stringValue = AppText.Settings.upToDate
-            case let .available(version, url):
-                releaseURL = url
-                updateButton.title = AppText.Settings.openRelease
-                updateStatusLabel.stringValue = "\(version) \(AppText.Settings.updateAvailableSuffix)"
-            case .unavailable:
-                updateButton.title = AppText.Settings.checkForUpdates
-                updateStatusLabel.stringValue = AppText.Settings.updateUnavailable
-            }
-        }
+        onCheckForUpdates()
     }
 }

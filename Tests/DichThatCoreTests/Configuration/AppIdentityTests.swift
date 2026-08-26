@@ -7,5 +7,4 @@ func applicationIdentityIsStable() {
     #expect(AppIdentity.executableName == "DichThat")
     #expect(AppIdentity.bundleIdentifier == "dev.hgthaii.dichthat")
     #expect(AppIdentity.minimumSystemVersion == "13.0")
-    #expect(AppIdentity.currentVersion == "0.1.0")
 }
