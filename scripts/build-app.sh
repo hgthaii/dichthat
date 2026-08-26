@@ -47,9 +47,20 @@ install -m 644 "${repository_root}/Resources/Info.plist" "${app_path}/Contents/I
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${version}" "${app_path}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${build_number}" "${app_path}/Contents/Info.plist"
 install -m 644 "${repository_root}/Resources/AppIcon.icns" "${app_path}/Contents/Resources/AppIcon.icns"
+install -m 644 "${repository_root}/Resources/AppIconDark.png" "${app_path}/Contents/Resources/AppIconDark.png"
+install -m 644 "${repository_root}/Resources/AppIconLight.png" "${app_path}/Contents/Resources/AppIconLight.png"
 install -m 644 "${repository_root}/Resources/BrandDT.png" "${app_path}/Contents/Resources/BrandDT.png"
 install -m 644 "${repository_root}/Resources/StatusItemTemplate.png" "${app_path}/Contents/Resources/StatusItemTemplate.png"
 /usr/bin/ditto "${binary_path}/Sparkle.framework" "${app_path}/Contents/Frameworks/Sparkle.framework"
+
+# SwiftPM links dynamic products relative to its build directory. Once the
+# executable is moved into an app bundle, it must also search the standard
+# Contents/Frameworks directory for Sparkle.
+if ! otool -l "${app_path}/Contents/MacOS/DichThat" | grep -F '@executable_path/../Frameworks' >/dev/null; then
+    install_name_tool -add_rpath '@executable_path/../Frameworks' \
+        "${app_path}/Contents/MacOS/DichThat"
+fi
+
 codesign --force --deep --sign - "${app_path}"
 
 printf '%s\n' "${app_path}"

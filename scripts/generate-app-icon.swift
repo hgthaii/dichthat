@@ -4,12 +4,25 @@ import ImageIO
 import UniformTypeIdentifiers
 
 enum IconDesign {
+    struct Palette {
+        let topColor: CGColor
+        let bottomColor: CGColor
+        let glyphColor: CGColor
+    }
+
     static let canvasSize = 1024
     static let cornerRadius: CGFloat = 228
     static let glyphInset: CGFloat = 220
-    static let topColor = NSColor(calibratedRed: 0.18, green: 0.20, blue: 0.25, alpha: 1).cgColor
-    static let bottomColor = NSColor(calibratedRed: 0.055, green: 0.065, blue: 0.085, alpha: 1).cgColor
-    static let glyphColor = NSColor.white.cgColor
+    static let dark = Palette(
+        topColor: NSColor(calibratedRed: 0.18, green: 0.20, blue: 0.25, alpha: 1).cgColor,
+        bottomColor: NSColor(calibratedRed: 0.055, green: 0.065, blue: 0.085, alpha: 1).cgColor,
+        glyphColor: NSColor.white.cgColor
+    )
+    static let light = Palette(
+        topColor: NSColor(calibratedWhite: 0.98, alpha: 1).cgColor,
+        bottomColor: NSColor(calibratedWhite: 0.82, alpha: 1).cgColor,
+        glyphColor: NSColor(calibratedWhite: 0.12, alpha: 1).cgColor
+    )
     static let sizes: [(name: String, pixels: Int)] = [
         ("icon_16x16.png", 16),
         ("icon_16x16@2x.png", 32),
@@ -40,7 +53,7 @@ let fileManager = FileManager.default
 try? fileManager.removeItem(at: iconsetURL)
 try fileManager.createDirectory(at: iconsetURL, withIntermediateDirectories: true)
 
-func render(size: Int) -> CGImage {
+func render(size: Int, palette: IconDesign.Palette) -> CGImage {
     let colorSpace = CGColorSpaceCreateDeviceRGB()
     let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
     guard let context = CGContext(
@@ -67,7 +80,7 @@ func render(size: Int) -> CGImage {
     context.clip()
     let gradient = CGGradient(
         colorsSpace: colorSpace,
-        colors: [IconDesign.topColor, IconDesign.bottomColor] as CFArray,
+        colors: [palette.topColor, palette.bottomColor] as CFArray,
         locations: [0, 1]
     )!
     context.drawLinearGradient(
@@ -81,7 +94,7 @@ func render(size: Int) -> CGImage {
     let glyphRect = canvas.insetBy(dx: IconDesign.glyphInset, dy: IconDesign.glyphInset)
     context.saveGState()
     context.clip(to: glyphRect, mask: source)
-    context.setFillColor(IconDesign.glyphColor)
+    context.setFillColor(palette.glyphColor)
     context.fill(glyphRect)
     context.restoreGState()
     return context.makeImage()!
@@ -99,9 +112,23 @@ func write(_ image: CGImage, to url: URL) {
 }
 
 for output in IconDesign.sizes {
-    write(render(size: output.pixels), to: iconsetURL.appendingPathComponent(output.name))
+    write(
+        render(size: output.pixels, palette: IconDesign.dark),
+        to: iconsetURL.appendingPathComponent(output.name)
+    )
 }
-write(render(size: IconDesign.canvasSize), to: root.appendingPathComponent("Resources/AppIconSource.png"))
+write(
+    render(size: IconDesign.canvasSize, palette: IconDesign.dark),
+    to: root.appendingPathComponent("Resources/AppIconDark.png")
+)
+write(
+    render(size: IconDesign.canvasSize, palette: IconDesign.light),
+    to: root.appendingPathComponent("Resources/AppIconLight.png")
+)
+write(
+    render(size: IconDesign.canvasSize, palette: IconDesign.dark),
+    to: root.appendingPathComponent("Resources/AppIconSource.png")
+)
 
 let icnsEntries: [(type: String, filename: String)] = [
     ("icp4", "icon_16x16.png"),

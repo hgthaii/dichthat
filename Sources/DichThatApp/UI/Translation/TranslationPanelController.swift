@@ -37,6 +37,29 @@ private enum PopupMouseMonitorBridge {
 
 @MainActor
 final class TranslationPanelController: NSObject, NSTextFieldDelegate {
+    private final class AccentBadgeView: NSView {
+        override init(frame frameRect: NSRect) {
+            super.init(frame: frameRect)
+            wantsLayer = true
+            refreshAppearance()
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        override func viewDidChangeEffectiveAppearance() {
+            super.viewDidChangeEffectiveAppearance()
+            refreshAppearance()
+        }
+
+        private func refreshAppearance() {
+            layer?.backgroundColor = SettingsAppearance.resolved(
+                NSColor.controlAccentColor.withAlphaComponent(0.14),
+                for: effectiveAppearance
+            )
+        }
+    }
+
     private final class ResultPanel: NSPanel, @unchecked Sendable {
         var onEscape: (@MainActor () -> Void)?
         nonisolated override var canBecomeKey: Bool { true }
@@ -85,6 +108,10 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     private var inputSelectionRange = NSRange(location: 0, length: 0)
 
     var isVisible: Bool { panel.isVisible }
+
+    func updateAppearance(_ appearance: NSAppearance) {
+        panel.appearance = AdaptiveAppIcon.systemAppearance(fallback: appearance)
+    }
 
     init(
         onDismiss: @escaping @MainActor () -> Void,
@@ -517,9 +544,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let badge = NSView()
-        badge.wantsLayer = true
-        badge.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.14).cgColor
+        let badge = AccentBadgeView()
         badge.layer?.cornerRadius = AppConfiguration.TranslationPanel.badgeCornerRadius
         badge.addSubview(label)
         NSLayoutConstraint.activate([
@@ -570,6 +595,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     }
 
     private func showPanel(anchor: SelectionAnchor) {
+        updateAppearance(NSApplication.shared.effectiveAppearance)
         let mainHeight = NSScreen.screens.first?.frame.height ?? 0
         let reference: NSPoint
         switch anchor {

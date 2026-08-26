@@ -5,9 +5,12 @@ import Foundation
 
 private enum Canvas {
     static let size = NSSize(width: 720, height: 500)
-    static let textColor = NSColor(calibratedWhite: 0.92, alpha: 1)
-    static let secondaryTextColor = NSColor(calibratedWhite: 0.58, alpha: 1)
-    static let accentColor = NSColor(calibratedRed: 0.37, green: 0.62, blue: 1, alpha: 1)
+    // Finder stores a DMG background as a static image rather than an
+    // appearance-aware asset. A neutral palette stays readable alongside both
+    // Aqua and Dark Aqua Finder chrome.
+    static let textColor = NSColor(calibratedWhite: 0.98, alpha: 1)
+    static let secondaryTextColor = NSColor(calibratedWhite: 0.82, alpha: 1)
+    static let accentColor = NSColor(calibratedRed: 0.48, green: 0.70, blue: 1, alpha: 1)
 }
 
 private func rect(x: CGFloat, top: CGFloat, width: CGFloat, height: CGFloat) -> NSRect {
@@ -65,7 +68,7 @@ private func drawStep(number: String, title: String, detail: String, top: CGFloa
 private func drawInstallLabelBand() {
     let areaRect = rect(x: 56, top: 218, width: 608, height: 42)
     let area = NSBezierPath(roundedRect: areaRect, xRadius: 12, yRadius: 12)
-    NSColor(calibratedWhite: 0.62, alpha: 0.94).setFill()
+    NSColor(calibratedWhite: 0.40, alpha: 0.96).setFill()
     area.fill()
 
     NSColor.white.withAlphaComponent(0.14).setStroke()
@@ -84,8 +87,8 @@ image.lockFocus()
 
 let fullRect = NSRect(origin: .zero, size: Canvas.size)
 let gradient = NSGradient(
-    starting: NSColor(calibratedWhite: 0.055, alpha: 1),
-    ending: NSColor(calibratedWhite: 0.095, alpha: 1)
+    starting: NSColor(calibratedWhite: 0.26, alpha: 1),
+    ending: NSColor(calibratedWhite: 0.34, alpha: 1)
 )
 gradient?.draw(in: fullRect, angle: -90)
 
@@ -125,7 +128,7 @@ let divider = NSBezierPath()
 divider.move(to: NSPoint(x: 56, y: Canvas.size.height - 278))
 divider.line(to: NSPoint(x: 664, y: Canvas.size.height - 278))
 divider.lineWidth = 1
-NSColor(calibratedWhite: 0.22, alpha: 0.65).setStroke()
+NSColor(calibratedWhite: 0.56, alpha: 0.65).setStroke()
 divider.stroke()
 
 drawStep(

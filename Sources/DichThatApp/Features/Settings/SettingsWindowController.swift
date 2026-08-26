@@ -3,10 +3,29 @@ import DichThatCore
 
 @MainActor
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
+    private final class SettingsWindow: NSWindow {
+        override func cancelOperation(_ sender: Any?) {
+            performClose(sender)
+        }
+    }
+
+    private final class AppearanceEffectView: NSVisualEffectView {
+        var onAppearanceChange: (() -> Void)?
+
+        override func viewDidChangeEffectiveAppearance() {
+            super.viewDidChangeEffectiveAppearance()
+            onAppearanceChange?()
+        }
+    }
+
     private enum Page: Int { case general, about }
 
+    private let rootView = AppearanceEffectView()
     private let generalTab = NSButton()
     private let aboutTab = NSButton()
+    private let tabBackground = NSView()
+    private let headerSeparator = NSView()
+    private let shortcutSeparator = NSView()
     private let contentHost = NSView()
     private let generalView = NSView()
     private let aboutView = NSView()
@@ -20,6 +39,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private var isPresented = false
     private var currentShortcutDisplay = ""
     private var launchAtLoginEnabled = false
+    private var selectedPage = Page.general
     private let appVersion: String
 
     private let onGrantPermission: @MainActor () -> Void
@@ -45,7 +65,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         self.onCheckForUpdates = onCheckForUpdates
         self.onDismiss = onDismiss
 
-        let window = NSWindow(
+        let window = SettingsWindow(
             contentRect: NSRect(
                 origin: .zero,
                 size: NSSize(
@@ -108,11 +128,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private func configureContent() {
         guard let window else { return }
-        let root = NSVisualEffectView()
-        root.material = .popover
-        root.blendingMode = .behindWindow
-        root.state = .active
-        window.contentView = root
+        rootView.material = .popover
+        rootView.blendingMode = .behindWindow
+        rootView.state = .active
+        rootView.onAppearanceChange = { [weak self] in self?.refreshAppearance() }
+        window.contentView = rootView
         configureTab(generalTab, title: AppText.Settings.general, action: #selector(showGeneral))
         configureTab(aboutTab, title: AppText.Settings.about, action: #selector(showAbout))
         let tabs = NSStackView(views: [generalTab, aboutTab])
@@ -120,26 +140,21 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         tabs.spacing = 0
         tabs.translatesAutoresizingMaskIntoConstraints = false
 
-        let tabBackground = NSView()
         tabBackground.wantsLayer = true
         tabBackground.layer?.cornerRadius = 7
         tabBackground.layer?.borderWidth = 1
-        tabBackground.layer?.backgroundColor = SettingsAppearance.controlBackground.cgColor
-        tabBackground.layer?.borderColor = SettingsAppearance.border.cgColor
         tabBackground.translatesAutoresizingMaskIntoConstraints = false
         tabBackground.addSubview(tabs)
 
-        let separator = NSView()
-        separator.wantsLayer = true
-        separator.layer?.backgroundColor = SettingsAppearance.divider.cgColor
-        separator.translatesAutoresizingMaskIntoConstraints = false
+        headerSeparator.wantsLayer = true
+        headerSeparator.translatesAutoresizingMaskIntoConstraints = false
         contentHost.translatesAutoresizingMaskIntoConstraints = false
-        root.addSubview(tabBackground)
-        root.addSubview(separator)
-        root.addSubview(contentHost)
+        rootView.addSubview(tabBackground)
+        rootView.addSubview(headerSeparator)
+        rootView.addSubview(contentHost)
         NSLayoutConstraint.activate([
-            tabBackground.topAnchor.constraint(equalTo: root.topAnchor, constant: 40),
-            tabBackground.centerXAnchor.constraint(equalTo: root.centerXAnchor),
+            tabBackground.topAnchor.constraint(equalTo: rootView.topAnchor, constant: 40),
+            tabBackground.centerXAnchor.constraint(equalTo: rootView.centerXAnchor),
             tabs.leadingAnchor.constraint(equalTo: tabBackground.leadingAnchor, constant: 1),
             tabs.trailingAnchor.constraint(equalTo: tabBackground.trailingAnchor, constant: -1),
             tabs.topAnchor.constraint(equalTo: tabBackground.topAnchor, constant: 1),
@@ -148,14 +163,17 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             generalTab.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.tabHeight),
             aboutTab.widthAnchor.constraint(equalToConstant: AppConfiguration.Settings.tabWidth),
             aboutTab.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.tabHeight),
-            separator.leadingAnchor.constraint(equalTo: root.leadingAnchor),
-            separator.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            separator.topAnchor.constraint(equalTo: root.topAnchor, constant: AppConfiguration.Settings.headerHeight),
-            separator.heightAnchor.constraint(equalToConstant: 1),
-            contentHost.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 24),
-            contentHost.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -24),
-            contentHost.topAnchor.constraint(equalTo: separator.bottomAnchor),
-            contentHost.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -20),
+            headerSeparator.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
+            headerSeparator.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
+            headerSeparator.topAnchor.constraint(
+                equalTo: rootView.topAnchor,
+                constant: AppConfiguration.Settings.headerHeight
+            ),
+            headerSeparator.heightAnchor.constraint(equalToConstant: 1),
+            contentHost.leadingAnchor.constraint(equalTo: rootView.leadingAnchor, constant: 24),
+            contentHost.trailingAnchor.constraint(equalTo: rootView.trailingAnchor, constant: -24),
+            contentHost.topAnchor.constraint(equalTo: headerSeparator.bottomAnchor),
+            contentHost.bottomAnchor.constraint(equalTo: rootView.bottomAnchor, constant: -20),
         ])
 
         configureGeneralView()
@@ -171,6 +189,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             ])
         }
         show(page: .general)
+        refreshAppearance()
     }
 
     private func configureGeneralView() {
@@ -239,13 +258,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         heading.spacing = 1
         heading.translatesAutoresizingMaskIntoConstraints = false
         shortcutEditor.translatesAutoresizingMaskIntoConstraints = false
-        let separator = NSView()
-        separator.wantsLayer = true
-        separator.layer?.backgroundColor = SettingsAppearance.divider.cgColor
-        separator.translatesAutoresizingMaskIntoConstraints = false
+        shortcutSeparator.wantsLayer = true
+        shortcutSeparator.translatesAutoresizingMaskIntoConstraints = false
         section.addSubview(heading)
         section.addSubview(shortcutEditor)
-        section.addSubview(separator)
+        section.addSubview(shortcutSeparator)
         NSLayoutConstraint.activate([
             heading.leadingAnchor.constraint(equalTo: section.leadingAnchor),
             heading.trailingAnchor.constraint(equalTo: section.trailingAnchor),
@@ -254,10 +271,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             shortcutEditor.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 10),
             shortcutEditor.widthAnchor.constraint(equalToConstant: 320),
             shortcutEditor.heightAnchor.constraint(equalToConstant: 42),
-            separator.leadingAnchor.constraint(equalTo: section.leadingAnchor),
-            separator.trailingAnchor.constraint(equalTo: section.trailingAnchor),
-            separator.bottomAnchor.constraint(equalTo: section.bottomAnchor),
-            separator.heightAnchor.constraint(equalToConstant: 1),
+            shortcutSeparator.leadingAnchor.constraint(equalTo: section.leadingAnchor),
+            shortcutSeparator.trailingAnchor.constraint(equalTo: section.trailingAnchor),
+            shortcutSeparator.bottomAnchor.constraint(equalTo: section.bottomAnchor),
+            shortcutSeparator.heightAnchor.constraint(equalToConstant: 1),
             section.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.shortcutHeight),
         ])
         return section
@@ -289,7 +306,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func configureAboutView() {
-        let icon = NSImageView(image: NSImage(named: NSImage.applicationIconName) ?? NSImage())
+        let icon = AdaptiveAppIconView()
         icon.imageScaling = .scaleProportionallyUpOrDown
         let name = NSTextField(labelWithString: AppIdentity.productName)
         name.font = .systemFont(ofSize: 16, weight: .semibold)
@@ -368,6 +385,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func show(page: Page) {
+        selectedPage = page
         generalView.isHidden = page != .general
         aboutView.isHidden = page != .about
         updateTabAppearance(generalTab, selected: page == .general)
@@ -376,8 +394,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private func updateTabAppearance(_ button: NSButton, selected: Bool) {
         button.layer?.backgroundColor = (
-            selected ? SettingsAppearance.selectedControlBackground : NSColor.clear
-        ).cgColor
+            SettingsAppearance.resolved(
+                selected ? SettingsAppearance.selectedControlBackground : NSColor.clear,
+                for: rootView.effectiveAppearance
+            )
+        )
         button.attributedTitle = NSAttributedString(
             string: button.title,
             attributes: [
@@ -385,6 +406,24 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
                 .foregroundColor: selected ? NSColor.labelColor : NSColor.secondaryLabelColor,
             ]
         )
+    }
+
+    private func refreshAppearance() {
+        let appearance = rootView.effectiveAppearance
+        tabBackground.layer?.backgroundColor = SettingsAppearance.resolved(
+            SettingsAppearance.controlBackground,
+            for: appearance
+        )
+        tabBackground.layer?.borderColor = SettingsAppearance.resolved(
+            SettingsAppearance.border,
+            for: appearance
+        )
+        let divider = SettingsAppearance.resolved(SettingsAppearance.divider, for: appearance)
+        headerSeparator.layer?.backgroundColor = divider
+        shortcutSeparator.layer?.backgroundColor = divider
+        updateTabAppearance(generalTab, selected: selectedPage == .general)
+        updateTabAppearance(aboutTab, selected: selectedPage == .about)
+        launchAtLoginToggle.needsDisplay = true
     }
 
     @objc private func showGeneral() { show(page: .general) }
