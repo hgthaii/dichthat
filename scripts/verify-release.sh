@@ -38,6 +38,10 @@ dmg_is_mounted=true
 
 bash "${repository_root}/scripts/verify-app.sh" \
     "${mount_directory}/DichThat.app"
+background_attributes="$(/usr/bin/GetFileInfo -a "${mount_directory}/.background")"
+[[ "${background_attributes}" == *V* ]]
+background_flags="$(/usr/bin/stat -f '%Sf' "${mount_directory}/.background")"
+[[ "${background_flags}" == *hidden* ]]
 
 hdiutil detach "${mount_directory}" -quiet
 dmg_is_mounted=false

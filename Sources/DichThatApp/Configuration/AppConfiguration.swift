@@ -10,6 +10,9 @@ enum AppConfiguration {
     enum Resources {
         static let brandSourceName = "BrandDT"
         static let appIconFilename = "AppIcon.icns"
+        static let darkAppIconName = "AppIconDark"
+        static let lightAppIconName = "AppIconLight"
+        static let adaptiveAppIconExtension = "png"
         static let statusItemTemplateName = "StatusItemTemplate"
         static let statusItemTemplateExtension = "png"
         static let statusItemPointSize: CGFloat = 18

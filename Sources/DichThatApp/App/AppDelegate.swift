@@ -5,7 +5,22 @@ import Sparkle
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    private final class AppearanceObserverView: NSView {
+        var onAppearanceChange: ((NSAppearance) -> Void)?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            onAppearanceChange?(effectiveAppearance)
+        }
+
+        override func viewDidChangeEffectiveAppearance() {
+            super.viewDidChangeEffectiveAppearance()
+            onAppearanceChange?(effectiveAppearance)
+        }
+    }
+
     private var statusItem: NSStatusItem?
+    private let appearanceObserver = AppearanceObserverView(frame: .zero)
     private let statusMenu = NSMenu()
     private var settingsController: SettingsWindowController?
     private let shortcutRegistrar = CarbonGlobalShortcutRegistrar()
@@ -74,6 +89,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.button?.target = self
         item.button?.action = #selector(statusItemClicked(_:))
         item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        appearanceObserver.onAppearanceChange = { [weak self] appearance in
+            self?.refreshApplicationIcon(for: appearance)
+        }
+        if let button = item.button {
+            button.addSubview(appearanceObserver)
+            refreshApplicationIcon(for: button.effectiveAppearance)
+        }
 
         let loadedShortcut = shortcutPreferences.loadShortcut()
         currentShortcut = loadedShortcut
@@ -146,6 +168,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         button.setAccessibilityLabel(presentation.accessibilityLabel)
     }
 
+    private func refreshApplicationIcon(for appearance: NSAppearance) {
+        translationPanel.updateAppearance(appearance)
+        guard let image = AdaptiveAppIcon.image(for: appearance) else { return }
+        NSApplication.shared.applicationIconImage = image
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         isTerminating = true
         permissionRefreshTask?.cancel()
@@ -178,6 +206,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if NSApp.currentEvent?.type == .rightMouseUp {
             dismissTranslation()
             refreshPermissionAndObservation()
+            statusMenu.appearance = AdaptiveAppIcon.systemAppearance(
+                fallback: NSApplication.shared.effectiveAppearance
+            )
             statusMenu.popUp(
                 positioning: nil,
                 at: NSPoint(x: 0, y: sender.bounds.height + 3),
@@ -519,7 +550,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func rebuildStatusMenu(accessibilityGranted: Bool) {
         statusMenu.removeAllItems()
-        for model in StatusMenuModel.items(accessibilityGranted: accessibilityGranted) {
+        let models = StatusMenuModel.items(accessibilityGranted: accessibilityGranted)
+        for (index, model) in models.enumerated() {
+            if index > 0 {
+                statusMenu.addItem(.separator())
+            }
             let action: Selector
             let keyEquivalent: String
             switch model.action {
@@ -536,9 +571,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let item = NSMenuItem(title: model.title, action: action, keyEquivalent: keyEquivalent)
             item.target = self
             statusMenu.addItem(item)
-            if model.action == .grantAccessibility {
-                statusMenu.addItem(.separator())
-            }
         }
     }
 

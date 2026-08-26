@@ -59,6 +59,8 @@ fi
 
 mkdir -p "${mount_directory}/.background"
 /usr/bin/ditto "${background_path}" "${mount_directory}/.background/install-background.png"
+/usr/bin/chflags hidden "${mount_directory}/.background"
+/usr/bin/SetFile -a V "${mount_directory}/.background"
 
 osascript - "$(basename "${mount_directory}")" <<'APPLESCRIPT'
 on run arguments
@@ -71,7 +73,6 @@ tell application "Finder"
             set toolbar visible to false
             set statusbar visible to false
             set bounds to {120, 120, 840, 650}
-            set position of every item to {900, 100}
         end tell
         set viewOptions to the icon view options of container window
         tell viewOptions
@@ -80,6 +81,7 @@ tell application "Finder"
             set arrangement to not arranged
         end tell
         set background picture of viewOptions to file ".background:install-background.png"
+        set position of item ".background" to {360, 170}
         set position of item "DichThat.app" to {180, 170}
         set position of item "Applications" to {540, 170}
         close

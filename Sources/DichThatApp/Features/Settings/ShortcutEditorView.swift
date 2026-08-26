@@ -152,10 +152,16 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
     }
 
     private func refreshKeyFieldAppearance() {
-        keyFieldContainer.layer?.backgroundColor = SettingsAppearance.controlBackground.cgColor
+        keyFieldContainer.layer?.backgroundColor = SettingsAppearance.resolved(
+            SettingsAppearance.controlBackground,
+            for: effectiveAppearance
+        )
         keyFieldContainer.layer?.borderColor = (
-            keyField.stringValue.isEmpty ? SettingsAppearance.border : SettingsAppearance.active
-        ).cgColor
+            SettingsAppearance.resolved(
+                keyField.stringValue.isEmpty ? SettingsAppearance.border : SettingsAppearance.active,
+                for: effectiveAppearance
+            )
+        )
         keyField.textColor = keyField.stringValue.isEmpty ? .secondaryLabelColor : SettingsAppearance.active
     }
 
@@ -164,10 +170,16 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
             let button = item.button
             let selected = button.state == .on
             let foreground = selected ? SettingsAppearance.active : NSColor.secondaryLabelColor
-            button.layer?.backgroundColor = SettingsAppearance.controlBackground.cgColor
+            button.layer?.backgroundColor = SettingsAppearance.resolved(
+                SettingsAppearance.controlBackground,
+                for: effectiveAppearance
+            )
             button.layer?.borderColor = (
-                selected ? SettingsAppearance.active : SettingsAppearance.border
-            ).cgColor
+                SettingsAppearance.resolved(
+                    selected ? SettingsAppearance.active : SettingsAppearance.border,
+                    for: effectiveAppearance
+                )
+            )
             let title = NSMutableAttributedString(
                 string: item.symbol,
                 attributes: [

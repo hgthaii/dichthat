@@ -7,6 +7,14 @@ enum SettingsAppearance {
     static let border = adaptiveColor(darkWhite: 0.145, lightWhite: 0.78)
     static let divider = adaptiveColor(darkWhite: 0.105, lightWhite: 0.84)
 
+    static func resolved(_ color: NSColor, for appearance: NSAppearance) -> CGColor {
+        var result = color.cgColor
+        appearance.performAsCurrentDrawingAppearance {
+            result = color.cgColor
+        }
+        return result
+    }
+
     private static func adaptiveColor(darkWhite: CGFloat, lightWhite: CGFloat) -> NSColor {
         NSColor(name: nil) { appearance in
             let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
