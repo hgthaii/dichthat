@@ -31,13 +31,6 @@ public enum CoreConfiguration {
         public static let debounceNanoseconds: UInt64 = 650_000_000
     }
 
-    public enum Updates {
-        public static let latestReleaseAPI = URL(
-            string: AppIdentity.latestReleaseAPIURL
-        )!
-        public static let timeout: TimeInterval = 8
-    }
-
     public enum SelectionObservation {
         public static let minimumDragDistance = 4.0
     }

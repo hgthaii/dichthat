@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/macOS-13%2B-000000?logo=apple&logoColor=white" alt="macOS 13+">
   <img src="https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white" alt="Swift 6.0">
   <img src="https://img.shields.io/badge/translation-VI%20%E2%86%94%20EN-34C759" alt="Vietnamese and English">
-  <img src="https://img.shields.io/badge/version-0.1.0-8E8E93" alt="Version 0.1.0">
+  <img src="https://img.shields.io/github/v/release/hgthaii/dichthat?display_name=tag&sort=semver" alt="Latest release">
   <a href="https://github.com/hgthaii/dichthat/actions/workflows/release.yml"><img src="https://github.com/hgthaii/dichthat/actions/workflows/release.yml/badge.svg" alt="CI/CD"></a>
 </p>
 
@@ -34,6 +34,7 @@ DichThat là ứng dụng nhỏ nằm trên menu bar của macOS. Bạn chỉ c�
 - Hiển thị phiên âm, nghĩa, ví dụ và từ đồng nghĩa cho từ tiếng Anh.
 - Phát âm nội dung bằng giọng đọc của macOS.
 - Tự khởi động khi đăng nhập nếu bạn muốn.
+- Tự tải và cài đặt bản cập nhật mới ngay trong ứng dụng.
 - Giao diện gọn nhẹ, hỗ trợ cả Light Mode và Dark Mode.
 
 ## Cách sử dụng

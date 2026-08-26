@@ -13,6 +13,15 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
     private let keyFieldContainer = NSView()
     private var isRefreshing = false
 
+    private var modifierButtons: [(button: NSButton, symbol: String, label: String)] {
+        [
+            (controlButton, "⌃", "CTRL"),
+            (optionButton, "⌥", "OPT"),
+            (commandButton, "⌘", "CMD"),
+            (shiftButton, "⇧", "SHIFT"),
+        ]
+    }
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         configureContent()
@@ -30,25 +39,26 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
         let key = display.last.map(String.init) ?? ""
         keyField.stringValue = KeyboardShortcut.keyCode(forAlphanumeric: key) == nil ? "" : key
         refreshModifierAppearance()
+        refreshKeyFieldAppearance()
         isRefreshing = false
     }
 
     private func configureContent() {
-        let modifierButtons = [controlButton, optionButton, commandButton, shiftButton]
+        let buttons = [controlButton, optionButton, commandButton, shiftButton]
         let tooltips = ["Control", "Option", "Command", "Shift"]
-        for (button, tooltip) in zip(modifierButtons, tooltips) {
+        for (button, tooltip) in zip(buttons, tooltips) {
             button.target = self
             button.action = #selector(valueChanged)
             button.setButtonType(.pushOnPushOff)
             button.isBordered = false
             button.wantsLayer = true
-            button.layer?.cornerRadius = 8
+            button.layer?.cornerRadius = 6
             button.layer?.borderWidth = 1
             button.toolTip = tooltip
         }
-        keyField.placeholderString = "A–Z / 0–9"
+        keyField.placeholderString = "KEY"
         keyField.alignment = .center
-        keyField.font = .monospacedSystemFont(ofSize: 13, weight: .semibold)
+        keyField.font = .monospacedSystemFont(ofSize: 16, weight: .medium)
         keyField.focusRingType = .none
         keyField.isBezeled = false
         keyField.drawsBackground = false
@@ -61,7 +71,7 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
         keyField.setAccessibilityLabel(AppText.Settings.shortcutKeyAccessibility)
         keyField.translatesAutoresizingMaskIntoConstraints = false
         keyFieldContainer.wantsLayer = true
-        keyFieldContainer.layer?.cornerRadius = 8
+        keyFieldContainer.layer?.cornerRadius = 6
         keyFieldContainer.layer?.borderWidth = 1
         keyFieldContainer.addSubview(keyField)
         NSLayoutConstraint.activate([
@@ -71,7 +81,7 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
             keyField.heightAnchor.constraint(equalToConstant: 20),
         ])
 
-        let plusLabels = (0..<modifierButtons.count).map { _ -> NSTextField in
+        let plusLabels = (0..<buttons.count).map { _ -> NSTextField in
             let label = NSTextField(labelWithString: "+")
             label.textColor = .tertiaryLabelColor
             label.font = .systemFont(ofSize: 12, weight: .medium)
@@ -88,20 +98,20 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
         row.translatesAutoresizingMaskIntoConstraints = false
         addSubview(row)
         NSLayoutConstraint.activate([
-            row.centerXAnchor.constraint(equalTo: centerXAnchor),
+            row.leadingAnchor.constraint(equalTo: leadingAnchor),
             row.centerYAnchor.constraint(equalTo: centerYAnchor),
             row.topAnchor.constraint(equalTo: topAnchor),
             row.bottomAnchor.constraint(equalTo: bottomAnchor),
-            controlButton.widthAnchor.constraint(equalToConstant: 40),
-            controlButton.heightAnchor.constraint(equalToConstant: 32),
-            optionButton.widthAnchor.constraint(equalToConstant: 40),
-            optionButton.heightAnchor.constraint(equalToConstant: 32),
-            commandButton.widthAnchor.constraint(equalToConstant: 40),
-            commandButton.heightAnchor.constraint(equalToConstant: 32),
-            shiftButton.widthAnchor.constraint(equalToConstant: 40),
-            shiftButton.heightAnchor.constraint(equalToConstant: 32),
-            keyFieldContainer.widthAnchor.constraint(equalToConstant: 66),
-            keyFieldContainer.heightAnchor.constraint(equalToConstant: 32),
+            controlButton.widthAnchor.constraint(equalToConstant: 48),
+            controlButton.heightAnchor.constraint(equalToConstant: 42),
+            optionButton.widthAnchor.constraint(equalToConstant: 48),
+            optionButton.heightAnchor.constraint(equalToConstant: 42),
+            commandButton.widthAnchor.constraint(equalToConstant: 48),
+            commandButton.heightAnchor.constraint(equalToConstant: 42),
+            shiftButton.widthAnchor.constraint(equalToConstant: 48),
+            shiftButton.heightAnchor.constraint(equalToConstant: 42),
+            keyFieldContainer.widthAnchor.constraint(equalToConstant: 40),
+            keyFieldContainer.heightAnchor.constraint(equalToConstant: 42),
         ])
         for label in plusLabels {
             label.widthAnchor.constraint(equalToConstant: 10).isActive = true
@@ -120,6 +130,7 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
         if keyField.stringValue != normalized {
             keyField.stringValue = normalized
         }
+        refreshKeyFieldAppearance()
         commitIfPossible()
     }
 
@@ -141,27 +152,46 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
     }
 
     private func refreshKeyFieldAppearance() {
-        keyFieldContainer.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
-        keyFieldContainer.layer?.borderColor = NSColor.separatorColor.cgColor
+        keyFieldContainer.layer?.backgroundColor = SettingsAppearance.controlBackground.cgColor
+        keyFieldContainer.layer?.borderColor = (
+            keyField.stringValue.isEmpty ? SettingsAppearance.border : SettingsAppearance.active
+        ).cgColor
+        keyField.textColor = keyField.stringValue.isEmpty ? .secondaryLabelColor : SettingsAppearance.active
     }
 
     private func refreshModifierAppearance() {
-        for button in [controlButton, optionButton, commandButton, shiftButton] {
+        for item in modifierButtons {
+            let button = item.button
             let selected = button.state == .on
-            let foreground = selected ? NSColor.white : NSColor.labelColor
-            button.layer?.backgroundColor = (
-                selected ? NSColor.controlAccentColor : NSColor.controlBackgroundColor
-            ).cgColor
+            let foreground = selected ? SettingsAppearance.active : NSColor.secondaryLabelColor
+            button.layer?.backgroundColor = SettingsAppearance.controlBackground.cgColor
             button.layer?.borderColor = (
-                selected ? NSColor.controlAccentColor : NSColor.separatorColor
+                selected ? SettingsAppearance.active : SettingsAppearance.border
             ).cgColor
-            button.attributedTitle = NSAttributedString(
-                string: button.title,
+            let title = NSMutableAttributedString(
+                string: item.symbol,
                 attributes: [
-                    .font: NSFont.systemFont(ofSize: 17, weight: .semibold),
+                    .font: NSFont.systemFont(ofSize: 14, weight: .medium),
                     .foregroundColor: foreground,
                 ]
             )
+            title.append(NSAttributedString(
+                string: "\n\(item.label)",
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: 7, weight: .medium),
+                    .foregroundColor: selected ? foreground : NSColor.tertiaryLabelColor,
+                ]
+            ))
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .center
+            paragraph.minimumLineHeight = 12
+            paragraph.maximumLineHeight = 12
+            title.addAttribute(
+                .paragraphStyle,
+                value: paragraph,
+                range: NSRange(location: 0, length: title.length)
+            )
+            button.attributedTitle = title
         }
     }
 

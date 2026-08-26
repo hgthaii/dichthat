@@ -11,12 +11,20 @@ let package = Package(
         .library(name: "DichThatCore", targets: ["DichThatCore"]),
         .executable(name: "DichThat", targets: ["DichThatApp"]),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(
+            url: "https://github.com/sparkle-project/Sparkle",
+            exact: "2.9.4"
+        ),
+    ],
     targets: [
         .target(name: "DichThatCore"),
         .executableTarget(
             name: "DichThatApp",
-            dependencies: ["DichThatCore"],
+            dependencies: [
+                "DichThatCore",
+                .product(name: "Sparkle", package: "Sparkle"),
+            ],
             swiftSettings: [
                 // AppKit invokes Objective-C entry points on the main thread
                 // without entering a Swift task executor. Static actor

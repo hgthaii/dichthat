@@ -1,6 +1,7 @@
 import AppKit
 import ApplicationServices
 import DichThatCore
+import Sparkle
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -11,6 +12,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let shortcutPreferences = ShortcutPreferences()
     private let appPreferences = AppPreferences()
     private let launchAtLoginService = LaunchAtLoginService()
+    private lazy var updaterController = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
     private var captureRequestState = CaptureRequestState()
     private var captureContext: SelectionTriggerContext?
     private var capturePreferredAnchor: SelectionAnchor?
@@ -197,9 +203,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 onGrantPermission: { [weak self] in
                     self?.requestAccessibilityPermission()
                 },
-                onOpenPermissionSettings: { [weak self] in
-                    self?.openAccessibilitySettings()
-                },
+                appVersion: AppMetadata.version,
                 onCommitShortcut: { [weak self] candidate in
                     self?.acceptShortcut(candidate) ?? AppText.Errors.applicationUnavailable
                 },
@@ -209,8 +213,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 onToggleLaunchAtLogin: { [weak self] isEnabled in
                     self?.setLaunchAtLogin(isEnabled)
                 },
-                onCheckForUpdates: {
-                    await UpdateChecker().check()
+                onCheckForUpdates: { [weak self] in
+                    self?.updaterController.checkForUpdates(nil)
                 },
                 onDismiss: { [weak self] in
                     self?.settingsDidDismiss()
@@ -510,13 +514,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
         refreshPermissionAndObservation()
-        startPermissionRefreshPolling()
-    }
-
-    private func openAccessibilitySettings() {
-        permissionFlowPending = true
-        permissionFlowObservedDeactivation = false
-        NSWorkspace.shared.open(AppConfiguration.Accessibility.settingsURL)
         startPermissionRefreshPolling()
     }
 

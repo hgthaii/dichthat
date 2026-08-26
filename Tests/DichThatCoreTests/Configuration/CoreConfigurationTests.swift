@@ -19,7 +19,6 @@ final class CoreConfigurationTests: XCTestCase {
             ("Google timeout", CoreConfiguration.GoogleTranslation.timeout, 5),
             ("minimum drag distance", CoreConfiguration.SelectionObservation.minimumDragDistance, 4),
             ("dictionary timeout", CoreConfiguration.EnglishDictionary.timeout, 5),
-            ("update timeout", CoreConfiguration.Updates.timeout, 8),
         ]
         for (name, actual, expected) in floatingPointCases {
             XCTAssertEqual(actual, expected, accuracy: 0.000_001, name)
