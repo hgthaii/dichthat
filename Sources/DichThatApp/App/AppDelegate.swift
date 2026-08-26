@@ -195,7 +195,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func quit() {
-        NSApplication.shared.terminate(nil)
+        statusMenu.cancelTracking()
+        DispatchQueue.main.async {
+            NSApplication.shared.terminate(nil)
+        }
     }
 
     @objc private func grantAccessibilityFromMenu() {

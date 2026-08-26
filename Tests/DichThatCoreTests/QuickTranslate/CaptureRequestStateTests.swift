@@ -24,6 +24,6 @@ func terminationReplyIsExactlyOnce() {
     #expect(state.complete(requestID: 1) == .accepted(replyToTermination: true))
     #expect(state.terminationReplyIssued)
     #expect(state.complete(requestID: 1) == .stale)
-    #expect(state.requestTermination() == .terminateLater)
+    #expect(state.requestTermination() == .terminateNow)
     #expect(state.begin() == .ignoredTerminationPending)
 }
