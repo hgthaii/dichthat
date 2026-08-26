@@ -49,7 +49,7 @@ public struct CaptureRequestState: Equatable, Sendable {
             terminationPending = true
             return .terminateLater
         }
-        if terminationReplyIssued { return .terminateLater }
+        if terminationReplyIssued { return .terminateNow }
         return .terminateNow
     }
 }
