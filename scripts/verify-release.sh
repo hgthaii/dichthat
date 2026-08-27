@@ -24,7 +24,7 @@ trap cleanup EXIT
 test -f "${dmg_path}"
 test -f "${archive_path}"
 test -f "${appcast_path}"
-[[ "$(basename "${dmg_path}")" == "DichThat-${version}.dmg" ]]
+[[ "$(basename "${dmg_path}")" == "DichThat.dmg" ]]
 [[ "$(basename "${archive_path}")" == "DichThat-${version}.zip" ]]
 
 mkdir -p "${mount_directory}" "${archive_directory}"

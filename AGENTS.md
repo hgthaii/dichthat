@@ -101,7 +101,7 @@ The generated artifacts are:
 
 ```text
 /private/tmp/dichthat-app/DichThat.app
-dist/DichThat-X.Y.Z.dmg
+dist/DichThat.dmg
 ```
 
 ## CI/CD and releases
