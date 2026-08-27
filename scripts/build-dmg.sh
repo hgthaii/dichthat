@@ -61,7 +61,7 @@ tell application "Finder"
             set current view to icon view
             set toolbar visible to false
             set statusbar visible to false
-            set bounds to {120, 120, 840, 650}
+            set bounds to {120, 120, 840, 390}
         end tell
         set viewOptions to the icon view options of container window
         set backgroundFile to file "DichThat.app:Contents:Resources:InstallerBackground.png"
@@ -71,19 +71,19 @@ tell application "Finder"
             set arrangement to not arranged
             set background picture to backgroundFile
         end tell
-        set position of item "DichThat.app" to {180, 120}
-        set position of item "Applications" to {540, 120}
+        set position of item "DichThat.app" to {180, 105}
+        set position of item "Applications" to {540, 105}
         close
         open
         delay 1
         tell container window
-            set bounds to {120, 120, 830, 640}
+            set bounds to {120, 120, 830, 380}
         end tell
     end tell
     delay 1
     tell disk diskName
         tell container window
-            set bounds to {120, 120, 840, 650}
+            set bounds to {120, 120, 840, 390}
         end tell
     end tell
     delay 3
