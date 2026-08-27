@@ -20,8 +20,7 @@ trap cleanup EXIT
 
 bash "${repository_root}/scripts/build-app.sh"
 bash "${repository_root}/scripts/verify-app.sh"
-version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' /private/tmp/dichthat-app/DichThat.app/Contents/Info.plist)"
-output_path="${1:-${output_directory}/DichThat-${version}.dmg}"
+output_path="${output_directory}/DichThat.dmg"
 mkdir -p "$(dirname "${output_path}")"
 /usr/bin/ditto \
     "/private/tmp/dichthat-app/DichThat.app" \

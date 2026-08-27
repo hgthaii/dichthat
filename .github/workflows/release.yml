@@ -112,7 +112,7 @@ jobs:
       - name: Verify release artifacts
         run: |
           bash scripts/verify-release.sh \
-            "dist/DichThat-${DICHTHAT_VERSION}.dmg" \
+            "dist/DichThat.dmg" \
             "dist/DichThat-${DICHTHAT_VERSION}.zip" \
             "dist/appcast.xml"
 
@@ -121,7 +121,7 @@ jobs:
         with:
           name: DichThat-Release-${{ github.ref_name }}
           path: |
-            dist/*.dmg
+            dist/DichThat.dmg
             dist/*.zip
             dist/appcast.xml
           if-no-files-found: error
@@ -132,7 +132,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            dist/*.dmg
+            dist/DichThat.dmg
             dist/*.zip
             dist/appcast.xml
           generate_release_notes: true
