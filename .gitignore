@@ -33,6 +33,12 @@ DerivedData/
 *.dSYM
 dist/
 
+# Private code-signing material
+*.p12
+*.keychain
+*.keychain-db
+*private-key*.pem
+
 # Playgrounds
 timeline.xctimeline
 playground.xcworkspace
