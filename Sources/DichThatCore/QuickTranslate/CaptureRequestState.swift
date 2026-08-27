@@ -52,4 +52,10 @@ public struct CaptureRequestState: Equatable, Sendable {
         if terminationReplyIssued { return .terminateNow }
         return .terminateNow
     }
+
+    public mutating func cancelForImmediateTermination() {
+        activeRequestID = nil
+        terminationPending = false
+        terminationReplyIssued = true
+    }
 }

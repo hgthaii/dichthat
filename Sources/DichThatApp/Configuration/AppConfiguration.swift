@@ -106,5 +106,6 @@ enum AppConfiguration {
         static let toggleHeight: CGFloat = 20
         static let toggleInset: CGFloat = 2
         static let aboutIconSize: CGFloat = 52
+        static let updateCardHeight: CGFloat = 58
     }
 }

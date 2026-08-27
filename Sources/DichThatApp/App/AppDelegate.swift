@@ -1,7 +1,6 @@
 import AppKit
 import ApplicationServices
 import DichThatCore
-import Sparkle
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -27,11 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let shortcutPreferences = ShortcutPreferences()
     private let appPreferences = AppPreferences()
     private let launchAtLoginService = LaunchAtLoginService()
-    private lazy var updaterController = SPUStandardUpdaterController(
-        startingUpdater: true,
-        updaterDelegate: nil,
-        userDriverDelegate: nil
-    )
+    private let updateCoordinator = UpdateCoordinator()
     private var captureRequestState = CaptureRequestState()
     private var captureContext: SelectionTriggerContext?
     private var capturePreferredAnchor: SelectionAnchor?
@@ -83,6 +78,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        updateCoordinator.onStateChange = { [weak self] state in
+            self?.settingsController?.refresh(updateState: state)
+        }
+        updateCoordinator.start()
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusMenu.delegate = self
         statusItem = item
@@ -184,14 +183,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         isTerminating = true
+        permissionRefreshTask?.cancel()
+        captureTask?.cancel()
+        captureTask = nil
+        captureContext = nil
+        capturePreferredAnchor = nil
+        captureRequestState.cancelForImmediateTermination()
         cancelTranslation(hidePanel: true)
-        if relaunchScheduled { return .terminateNow }
-        switch captureRequestState.requestTermination() {
-        case .terminateNow:
-            return .terminateNow
-        case .terminateLater:
-            return .terminateLater
-        }
+        selectionObservation.stop()
+        shortcutRegistrar.unregister()
+        return .terminateNow
     }
 
     @objc private func quit() {
@@ -231,6 +232,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func showSettings() {
+        presentSettings(showAbout: false)
+    }
+
+    private func presentSettings(showAbout: Bool) {
         refreshPermissionAndObservation()
         if settingsController == nil {
             settingsController = SettingsWindowController(
@@ -248,7 +253,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     self?.setLaunchAtLogin(isEnabled)
                 },
                 onCheckForUpdates: { [weak self] in
-                    self?.updaterController.checkForUpdates(nil)
+                    self?.updateCoordinator.checkForUpdates()
+                },
+                onInstallUpdate: { [weak self] in
+                    self?.updateCoordinator.installAvailableUpdate()
                 },
                 onDismiss: { [weak self] in
                     self?.settingsDidDismiss()
@@ -257,7 +265,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         isSettingsPresented = true
         shortcutRegistrar.unregister()
-        settingsController?.present(state: settingsState)
+        settingsController?.present(
+            state: settingsState,
+            updateState: updateCoordinator.state,
+            showAbout: showAbout
+        )
+    }
+
+    @objc private func checkForUpdatesFromMenu() {
+        presentSettings(showAbout: true)
+        updateCoordinator.checkForUpdates()
     }
 
     private func settingsDidDismiss() {
@@ -563,6 +580,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             switch model.action {
             case .grantAccessibility:
                 action = #selector(grantAccessibilityFromMenu)
+                keyEquivalent = ""
+            case .checkForUpdates:
+                action = #selector(checkForUpdatesFromMenu)
                 keyEquivalent = ""
             case .settings:
                 action = #selector(showSettings)

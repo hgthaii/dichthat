@@ -1,5 +1,6 @@
 public enum StatusMenuAction: Equatable, Sendable {
     case grantAccessibility
+    case checkForUpdates
     case settings
     case quit
 }
@@ -48,6 +49,10 @@ public enum StatusMenuModel {
                 action: .grantAccessibility
             ))
         }
+        result.append(StatusMenuItemModel(
+            title: AppText.Menu.checkForUpdates,
+            action: .checkForUpdates
+        ))
         result.append(StatusMenuItemModel(title: AppText.Menu.settings, action: .settings))
         result.append(StatusMenuItemModel(
             title: "\(AppText.Menu.quitPrefix) \(AppIdentity.productName)",
