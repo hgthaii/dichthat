@@ -7,8 +7,6 @@ output_directory="${repository_root}/dist"
 staging_directory="$(mktemp -d /private/tmp/dichthat-dmg.XXXXXX)"
 payload_directory="${staging_directory}/payload"
 read_write_image="${staging_directory}/DichThat-rw.dmg"
-background_directory="${staging_directory}/background"
-background_path="${background_directory}/install-background.png"
 mount_directory=""
 device_name=""
 
@@ -21,17 +19,14 @@ cleanup() {
 trap cleanup EXIT
 
 bash "${repository_root}/scripts/build-app.sh"
+bash "${repository_root}/scripts/verify-app.sh"
 version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' /private/tmp/dichthat-app/DichThat.app/Contents/Info.plist)"
 output_path="${1:-${output_directory}/DichThat-${version}.dmg}"
 mkdir -p "$(dirname "${output_path}")"
-mkdir -p "${background_directory}"
 /usr/bin/ditto \
     "/private/tmp/dichthat-app/DichThat.app" \
     "${payload_directory}/DichThat.app"
 ln -s /Applications "${payload_directory}/Applications"
-CLANG_MODULE_CACHE_PATH="/private/tmp/dichthat-dmg-clang-cache" \
-SWIFTPM_MODULECACHE_OVERRIDE="/private/tmp/dichthat-dmg-swift-cache" \
-xcrun swift "${repository_root}/scripts/generate-dmg-background.swift" "${background_path}"
 
 hdiutil create \
     -volname "DichThat" \
@@ -57,11 +52,6 @@ if [[ -z "${device_name}" || -z "${mount_directory}" ]]; then
     exit 1
 fi
 
-mkdir -p "${mount_directory}/.background"
-/usr/bin/ditto "${background_path}" "${mount_directory}/.background/install-background.png"
-/usr/bin/chflags hidden "${mount_directory}/.background"
-/usr/bin/SetFile -a V "${mount_directory}/.background"
-
 osascript - "$(basename "${mount_directory}")" <<'APPLESCRIPT'
 on run arguments
 set diskName to item 1 of arguments
@@ -75,15 +65,15 @@ tell application "Finder"
             set bounds to {120, 120, 840, 650}
         end tell
         set viewOptions to the icon view options of container window
+        set backgroundFile to file "DichThat.app:Contents:Resources:InstallerBackground.png"
         tell viewOptions
             set icon size to 96
             set text size to 12
             set arrangement to not arranged
+            set background picture to backgroundFile
         end tell
-        set background picture of viewOptions to file ".background:install-background.png"
-        set position of item ".background" to {360, 170}
-        set position of item "DichThat.app" to {180, 170}
-        set position of item "Applications" to {540, 170}
+        set position of item "DichThat.app" to {180, 120}
+        set position of item "Applications" to {540, 120}
         close
         open
         delay 1
@@ -98,6 +88,9 @@ tell application "Finder"
         end tell
     end tell
     delay 3
+    tell disk diskName
+        close container window
+    end tell
 end tell
 end run
 APPLESCRIPT
