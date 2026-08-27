@@ -110,7 +110,7 @@ dist/DichThat-X.Y.Z.dmg
 
 Sparkle update archives are signed with EdDSA. Never write the private key to the repository or logs; CI reads it only from the `SPARKLE_EDDSA_PRIVATE_KEY` GitHub Secret.
 
-Current local and CI builds use ad-hoc signing. Do not describe them as Developer ID signed or notarized until certificate signing, notarization, and stapling are actually configured and verified.
+Pull-request and ordinary local builds may use ad-hoc signing. Tagged releases use the pinned DichThat self-signed certificate so their designated requirement remains stable across updates. Do not describe releases as Developer ID signed or notarized until Developer ID signing, notarization, and stapling are actually configured and verified.
 
 ## Documentation
 
