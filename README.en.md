@@ -26,6 +26,7 @@
 DichThat is a small macOS menu-bar app. Select some text, press a shortcut, and read the translation next to it—without switching to another app.
 
 It automatically detects English or Vietnamese and translates into the other language.
+Releases support both Apple Silicon and Intel Macs running macOS 13 or later.
 
 ## Highlights
 
@@ -39,10 +40,11 @@ It automatically detects English or Vietnamese and translates into the other lan
 
 ## How to use
 
-1. Open DichThat and grant **Accessibility** access from Settings.
-2. Select English or Vietnamese text in any app.
-3. Press the default `⌃⌥T` shortcut.
-4. The translation appears next to your selected text.
+1. Open the DMG, drag DichThat to **Applications**, then open it from there.
+2. If macOS blocks the first launch, use **Privacy & Security → Open Anyway**.
+3. Grant **Accessibility** access from Settings.
+4. Select English or Vietnamese text and press the default `⌃⌥T` shortcut.
+5. The translation appears next to your selected text.
 
 You can also click the DichThat menu-bar icon and type what you want to translate.
 

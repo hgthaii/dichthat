@@ -26,6 +26,7 @@
 DichThat là ứng dụng nhỏ nằm trên menu bar của macOS. Bạn chỉ cần chọn một đoạn chữ, nhấn phím tắt và xem bản dịch ngay bên cạnh — không cần chuyển sang ứng dụng khác.
 
 Ứng dụng tự nhận biết tiếng Anh hoặc tiếng Việt và dịch sang ngôn ngữ còn lại.
+Bản phát hành hỗ trợ cả máy Mac Apple Silicon và Intel chạy macOS 13 trở lên.
 
 ## Tính năng chính
 
@@ -39,10 +40,11 @@ DichThat là ứng dụng nhỏ nằm trên menu bar của macOS. Bạn chỉ c�
 
 ## Cách sử dụng
 
-1. Mở DichThat và cấp quyền **Accessibility** theo hướng dẫn trong Settings.
-2. Chọn chữ tiếng Anh hoặc tiếng Việt trong ứng dụng bất kỳ.
-3. Nhấn phím tắt mặc định `⌃⌥T`.
-4. Bản dịch sẽ xuất hiện cạnh đoạn chữ vừa chọn.
+1. Mở file DMG, kéo DichThat vào **Applications**, rồi mở app tại đó.
+2. Nếu macOS chặn lần đầu, vào **Privacy & Security → Open Anyway**.
+3. Cấp quyền **Accessibility** theo hướng dẫn trong Settings.
+4. Chọn chữ tiếng Anh hoặc tiếng Việt và nhấn phím tắt mặc định `⌃⌥T`.
+5. Bản dịch sẽ xuất hiện cạnh đoạn chữ vừa chọn.
 
 Bạn cũng có thể click icon DichThat trên menu bar rồi nhập nội dung cần dịch.
 
