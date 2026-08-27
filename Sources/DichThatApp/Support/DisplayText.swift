@@ -1,5 +1,9 @@
 import DichThatCore
 
+private func localizedDisplayText(_ english: String, _ vietnamese: String) -> String {
+    AppLanguage.current.localized(english: english, vietnamese: vietnamese)
+}
+
 extension SelectionCaptureMethod {
     var displayText: String {
         switch self {
@@ -14,16 +18,28 @@ extension SelectionCaptureMethod {
 extension SelectionCaptureError {
     var displayText: String {
         switch self {
-        case .accessibilityPermissionMissing: return "Accessibility not granted"
-        case .selectionUnavailable: return "selection unavailable"
-        case .clipboardSnapshotUnavailable: return "clipboard snapshot unavailable"
-        case .clipboardCopyEventFailed: return "copy event failed"
-        case .clipboardCopyTimeout: return "copy timeout"
-        case .clipboardLateCopyCapturedTextUnavailable: return "late copy had no text"
-        case .clipboardCapturedTextUnavailable: return "copied text unavailable"
-        case .clipboardRestoreSkippedConcurrentChange: return "clipboard changed; restore skipped"
-        case .clipboardRestoreFailed: return "clipboard restore failed"
-        case .clipboardRestoreRaceDetected: return "clipboard restore race detected"
+        case .accessibilityPermissionMissing:
+            return localizedDisplayText("Accessibility not granted", "Chưa cấp quyền Trợ năng")
+        case .selectionUnavailable:
+            return localizedDisplayText("Selection unavailable", "Không thể đọc nội dung được chọn")
+        case .clipboardSnapshotUnavailable:
+            return localizedDisplayText("Clipboard unavailable", "Không thể truy cập clipboard")
+        case .clipboardCopyEventFailed:
+            return localizedDisplayText("Couldn’t copy the selection", "Không thể sao chép nội dung được chọn")
+        case .clipboardCopyTimeout:
+            return localizedDisplayText("Copy timed out", "Sao chép quá thời gian")
+        case .clipboardLateCopyCapturedTextUnavailable,
+             .clipboardCapturedTextUnavailable:
+            return localizedDisplayText("Copied text unavailable", "Không đọc được nội dung đã sao chép")
+        case .clipboardRestoreSkippedConcurrentChange:
+            return localizedDisplayText(
+                "Clipboard changed; restore skipped",
+                "Clipboard đã thay đổi nên không thể khôi phục"
+            )
+        case .clipboardRestoreFailed:
+            return localizedDisplayText("Clipboard restore failed", "Khôi phục clipboard thất bại")
+        case .clipboardRestoreRaceDetected:
+            return localizedDisplayText("Clipboard changed while restoring", "Clipboard thay đổi khi khôi phục")
         }
     }
 }
@@ -32,13 +48,13 @@ extension TranslationFailure {
     var displayText: String {
         switch self {
         case .emptyInput: return AppText.Errors.noText
-        case let .inputTooLong(maximum): return "Selection exceeds \(maximum) Unicode scalars"
+        case let .inputTooLong(maximum): return AppText.Errors.inputTooLong(maximum: maximum)
         case .unsupportedLanguage: return AppText.Errors.supportedLanguages
         case .ambiguousLanguage: return AppText.Errors.ambiguousLanguage
         case .cancelled: return AppText.Errors.cancelled
         case .timedOut: return AppText.Errors.timedOut
         case .networkUnavailable: return AppText.Errors.serviceUnavailable
-        case let .httpStatus(status): return "Translation service error (\(status))"
+        case let .httpStatus(status): return AppText.Errors.serviceError(status: status)
         case .malformedResponse, .emptyTranslation: return AppText.Errors.invalidResponse
         case .unsupportedResponseLanguage: return AppText.Errors.unsupportedResponseLanguage
         case .sourceLanguageMismatch: return AppText.Errors.sourceLanguageChanged
@@ -51,8 +67,10 @@ extension ShortcutConfigurationError {
         switch self {
         case let .invalidShortcut(error): return error.displayText
         case let .registration(error): return error.displayText
-        case .persistenceFailed: return "preferences unavailable"
-        case let .rollbackFailed(error): return "rollback failed (\(error.displayText))"
+        case .persistenceFailed: return AppText.ShortcutErrors.persistenceUnavailable
+        case let .rollbackFailed(error):
+            return localizedDisplayText("Rollback failed", "Khôi phục phím tắt thất bại")
+                + " (\(error.displayText))"
         }
     }
 }
@@ -61,11 +79,11 @@ extension KeyboardShortcut.ValidationError {
     var displayText: String {
         switch self {
         case .unsupportedModifiers:
-            return "Choose only Control, Option, Command, or Shift."
+            return AppText.ShortcutErrors.unsupportedModifiers
         case .requiresCommandControlOrOption:
-            return "Choose at least Control, Option, or Command."
+            return AppText.ShortcutErrors.requiresPrimaryModifier
         case .unusableKeyCode:
-            return "Choose one letter A–Z or number 0–9."
+            return AppText.ShortcutErrors.unusableKey
         }
     }
 }
@@ -74,8 +92,12 @@ extension ShortcutRegistrationError {
     var displayText: String {
         switch self {
         case let .invalidShortcut(error): return error.displayText
-        case let .eventHandlerInstallationFailed(status): return "event handler OSStatus \(status)"
-        case let .hotKeyRegistrationFailed(status): return "hotkey OSStatus \(status)"
+        case let .eventHandlerInstallationFailed(status):
+            return localizedDisplayText("Event handler error", "Lỗi xử lý phím tắt")
+                + " (OSStatus \(status))"
+        case let .hotKeyRegistrationFailed(status):
+            return localizedDisplayText("Hotkey registration error", "Lỗi đăng ký phím tắt")
+                + " (OSStatus \(status))"
         }
     }
 }
