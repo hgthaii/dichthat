@@ -19,7 +19,9 @@ enum AppConfiguration {
     }
 
     enum Accessibility {
+        static let captureQueueLabel = "dev.hgthaii.dichthat.accessibility-capture"
         static let searchDuration: CFTimeInterval = 1.25
+        static let captureTimeout: TimeInterval = 3
         static let maximumDepth = 12
         static let maximumNodes = 180
         static let maximumCalls = 360
@@ -87,7 +89,7 @@ enum AppConfiguration {
         static let maximumHeight: CGFloat = 520
         static let screenMargin: CGFloat = 40
         static let minimumHeight: CGFloat = 120
-        static let minimumInputHeight: CGFloat = 92
+        static let minimumInputHeight: CGFloat = 66
     }
 
     enum Settings {
@@ -106,6 +108,6 @@ enum AppConfiguration {
         static let toggleHeight: CGFloat = 20
         static let toggleInset: CGFloat = 2
         static let aboutIconSize: CGFloat = 52
-        static let updateCardHeight: CGFloat = 58
+        static let updateCardHeight: CGFloat = 64
     }
 }

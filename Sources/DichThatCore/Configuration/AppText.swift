@@ -1,91 +1,297 @@
+private func localized(_ english: String, _ vietnamese: String) -> String {
+    AppLanguage.current.localized(english: english, vietnamese: vietnamese)
+}
+
 public enum AppText {
     public enum Menu {
-        public static let grantAccessibility = "Grant Accessibility Access…"
-        public static let checkForUpdates = "Check for Updates…"
-        public static let settings = "Settings…"
-        public static let quitPrefix = "Quit"
-        public static let accessibilityRequiredSuffix = "Accessibility permission required"
+        public static var grantAccessibility: String {
+            grantAccessibility(language: .current)
+        }
+        public static func grantAccessibility(language: AppLanguage) -> String {
+            language.localized(
+                english: "Grant Accessibility Access…",
+                vietnamese: "Cấp quyền Trợ năng…"
+            )
+        }
+        public static var checkForUpdates: String {
+            checkForUpdates(language: .current)
+        }
+        public static func checkForUpdates(language: AppLanguage) -> String {
+            language.localized(
+                english: "Check for Updates…",
+                vietnamese: "Kiểm tra bản cập nhật…"
+            )
+        }
+        public static var settings: String { settings(language: .current) }
+        public static func settings(language: AppLanguage) -> String {
+            language.localized(english: "Settings…", vietnamese: "Cài đặt…")
+        }
+        public static var quitPrefix: String { quitPrefix(language: .current) }
+        public static func quitPrefix(language: AppLanguage) -> String {
+            language.localized(english: "Quit", vietnamese: "Thoát")
+        }
+        public static var accessibilityRequiredSuffix: String {
+            accessibilityRequiredSuffix(language: .current)
+        }
+        public static func accessibilityRequiredSuffix(language: AppLanguage) -> String {
+            language.localized(
+                english: "Accessibility permission required",
+                vietnamese: "Cần quyền Trợ năng"
+            )
+        }
     }
 
     public enum Translation {
-        public static let loading = "Translating…"
-        public static let failureTitle = "Couldn’t translate"
-        public static let meanings = "Meanings"
-        public static let pronunciationUnavailable = "Pronunciation unavailable"
-        public static let englishSynonyms = "Synonyms"
-        public static let inputPlaceholder = "Type English or Vietnamese…"
-        public static let inputPrompt = "Start typing to translate automatically"
-        public static let closeAccessibility = "Close translation"
-        public static let sourceWordSpeechAccessibility = "Pronounce source word"
-        public static let sourceTextSpeechAccessibility = "Pronounce source text"
-        public static let voiceUnavailable = "System voice unavailable"
+        public static var loading: String { localized("Translating…", "Đang dịch…") }
+        public static var failureTitle: String { localized("Couldn’t translate", "Không thể dịch") }
+        public static var meanings: String { localized("Meanings", "Nghĩa") }
+        public static var pronunciationUnavailable: String {
+            localized("Pronunciation unavailable", "Không có cách phát âm")
+        }
+        public static var englishSynonyms: String { localized("Synonyms", "Từ đồng nghĩa") }
+        public static var inputPlaceholder: String {
+            inputPlaceholder(language: .current)
+        }
+        public static func inputPlaceholder(language: AppLanguage) -> String {
+            language.localized(english: "Type something ...", vietnamese: "Nhập gì đó...")
+        }
+        public static var closeAccessibility: String {
+            localized("Close translation", "Đóng bản dịch")
+        }
+        public static var sourceWordSpeechAccessibility: String {
+            localized("Pronounce source word", "Phát âm từ gốc")
+        }
+        public static var sourceTextSpeechAccessibility: String {
+            localized("Pronounce source text", "Phát âm nội dung gốc")
+        }
+        public static var voiceUnavailable: String {
+            localized("System voice unavailable", "Không có giọng đọc hệ thống")
+        }
     }
 
     public enum Settings {
-        public static let windowTitle = "DichThat Settings"
-        public static let general = "General"
-        public static let about = "About"
-        public static let accessibilityTitle = "Accessibility access required"
-        public static let accessibilityDescription = "Allow DichThat to read the text you select in other apps."
-        public static let grantAccess = "Grant Access"
-        public static let openSettings = "Open Settings"
-        public static let shortcutTitle = "Keyboard Shortcut"
-        public static let shortcutSubtitle = "Press modifiers to toggle and type one key (A–Z or 0–9) to customize"
-        public static let shortcutKeyAccessibility = "Shortcut letter or number"
-        public static let selectionTitle = "Selection icon"
-        public static let selectionSubtitle = "Show after dragging to select text"
-        public static let launchAtLoginTitle = "Launch at login"
-        public static let launchAtLoginSubtitle = "Start DichThat automatically when you sign in to macOS"
-        public static let checkForUpdates = "Check for Updates"
-        public static let reportABug = "Report a Bug"
-        public static let versionPrefix = "Version"
-        public static let aboutDescription = "Fast English ↔ Vietnamese translation from anywhere on macOS."
-        public static let startupError = "Couldn’t update the launch-at-login setting."
-        public static let startupApprovalRequired = "Allow DichThat in System Settings → General → Login Items."
-        public static let record = "Record"
-        public static let typeShortcut = "Type shortcut"
-        public static let escapeToCancel = "Esc to cancel"
-        public static let saved = "Saved"
-        public static let shortcutRecorderAccessibility = "Keyboard shortcut recorder"
-        public static let unsupportedShortcut = "Unsupported"
-        public static let addShortcutModifier = "Add ⌘, ⌥, or ⌃"
-        public static let chooseAnotherKey = "Choose another key"
+        public static var windowTitle: String { localized("DichThat Settings", "Cài đặt DichThat") }
+        public static var general: String { localized("General", "Chung") }
+        public static var about: String { localized("About", "Giới thiệu") }
+        public static var accessibilityTitle: String {
+            localized("Accessibility access required", "Yêu cầu quyền Trợ năng")
+        }
+        public static var accessibilityDescription: String {
+            localized(
+                "Allow DichThat to read the text you select in other apps.",
+                "Cho phép DichThat đọc nội dung bạn chọn trong ứng dụng khác."
+            )
+        }
+        public static var grantAccess: String { localized("Grant Access", "Cấp quyền") }
+        public static var openSettings: String { localized("Open Settings", "Mở Cài đặt") }
+        public static var shortcutTitle: String { localized("Keyboard Shortcut", "Phím tắt") }
+        public static var shortcutSubtitle: String {
+            localized(
+                "Press modifiers to toggle and type one key (A–Z or 0–9) to customize",
+                "Chọn các phím bổ trợ và nhập một ký tự (A–Z hoặc 0–9)"
+            )
+        }
+        public static var shortcutKeyAccessibility: String {
+            localized("Shortcut letter or number", "Chữ hoặc số của phím tắt")
+        }
+        public static var shortcutKeyPlaceholder: String { localized("KEY", "PHÍM") }
+        public static var selectionTitle: String { localized("Selection icon", "Biểu tượng chọn chữ") }
+        public static var selectionSubtitle: String {
+            localized("Show after dragging to select text", "Hiện sau khi kéo để chọn nội dung")
+        }
+        public static var launchAtLoginTitle: String {
+            localized("Launch at login", "Mở khi đăng nhập")
+        }
+        public static var launchAtLoginSubtitle: String {
+            localized(
+                "Start DichThat automatically when you sign in to macOS",
+                "Tự động mở DichThat khi bạn đăng nhập macOS"
+            )
+        }
+        public static var checkForUpdates: String {
+            localized("Check for Updates", "Kiểm tra cập nhật")
+        }
+        public static var reportABug: String { localized("Report a Bug", "Báo lỗi") }
+        public static var versionPrefix: String { localized("Version", "Phiên bản") }
+        public static var aboutDescription: String {
+            aboutDescription(language: .current)
+        }
+        public static func aboutDescription(language: AppLanguage) -> String {
+            language.localized(
+                english: "Translate now. Understand truly.",
+                vietnamese: "Dịch ngay. Hiểu thật."
+            )
+        }
+        public static var startupError: String {
+            localized(
+                "Couldn’t update the launch-at-login setting.",
+                "Không thể cập nhật cài đặt mở khi đăng nhập."
+            )
+        }
+        public static var startupApprovalRequired: String {
+            localized(
+                "Allow DichThat in System Settings → General → Login Items.",
+                "Cho phép DichThat trong Cài đặt hệ thống → Cài đặt chung → Mục đăng nhập."
+            )
+        }
+        public static var record: String { localized("Record", "Ghi nhận") }
+        public static var typeShortcut: String { localized("Type shortcut", "Nhập phím tắt") }
+        public static var escapeToCancel: String { localized("Esc to cancel", "Esc để huỷ") }
+        public static var saved: String { localized("Saved", "Đã lưu") }
+        public static var shortcutRecorderAccessibility: String {
+            localized("Keyboard shortcut recorder", "Trình ghi phím tắt")
+        }
+        public static var unsupportedShortcut: String {
+            localized("Unsupported", "Không được hỗ trợ")
+        }
+        public static var addShortcutModifier: String {
+            localized("Add ⌘, ⌥, or ⌃", "Thêm ⌘, ⌥ hoặc ⌃")
+        }
+        public static var chooseAnotherKey: String {
+            localized("Choose another key", "Chọn phím khác")
+        }
+
+        public static func shortcutRegistrationFailed(_ detail: String) -> String {
+            localized("Shortcut registration failed", "Đăng ký phím tắt thất bại") + ": \(detail)"
+        }
+
+        public static func shortcutUpdateFailed(_ detail: String) -> String {
+            localized("Shortcut update failed", "Cập nhật phím tắt thất bại") + ": \(detail)"
+        }
+
+        public static func shortcutUnavailable(_ detail: String) -> String {
+            localized("Could not use shortcut", "Không thể dùng phím tắt") + ": \(detail)"
+        }
     }
 
     public enum Updates {
-        public static let checkForUpdates = "Check for Updates"
-        public static let checking = "Checking…"
-        public static let checkingDetail = "Checking for a new version…"
-        public static let updateNow = "Update Now"
-        public static let upToDate = "DichThat is up to date"
-        public static let availableSuffix = "is available"
-        public static let lastCheckedNever = "Never checked"
-        public static let lastCheckedJustNow = "Last checked just now"
-        public static let lastCheckedPrefix = "Last checked"
-        public static let failed = "Couldn’t check for updates"
-        public static let checkUnavailable = "Another update operation is already running"
+        public static var title: String { localized("Software Update", "Cập nhật phần mềm") }
+        public static var checkForUpdates: String {
+            localized("Check for Updates", "Kiểm tra cập nhật")
+        }
+        public static var checking: String { localized("Checking…", "Đang kiểm tra…") }
+        public static var checkingDetail: String {
+            localized("Checking for a new version…", "Đang kiểm tra phiên bản mới…")
+        }
+        public static var updateNow: String { localized("Update Now", "Cập nhật ngay") }
+        public static var upToDate: String {
+            localized("DichThat is up to date", "DichThat đã được cập nhật")
+        }
+        public static var lastCheckedNever: String {
+            localized("Never checked", "Chưa từng kiểm tra")
+        }
+        public static var lastCheckedJustNow: String {
+            localized("Last checked just now", "Vừa kiểm tra")
+        }
+        public static var lastCheckedPrefix: String {
+            localized("Last checked", "Đã kiểm tra")
+        }
+        public static var failed: String {
+            localized("Couldn’t check for updates", "Không thể kiểm tra cập nhật")
+        }
+        public static var checkUnavailable: String {
+            localized(
+                "Another update operation is already running",
+                "Một tác vụ cập nhật khác đang chạy"
+            )
+        }
+
+        public static func available(version: String) -> String {
+            localized("Version \(version) is available", "Đã có phiên bản \(version)")
+        }
     }
 
     public enum Installation {
-        public static let title = "Move DichThat to Applications"
-        public static let message = "DichThat can’t run reliably from the installer. Drag it to Applications, then open it there."
-        public static let openApplications = "Open Applications"
-        public static let quit = "Quit"
+        public static var title: String {
+            localized("Move DichThat to Applications", "Di chuyển DichThat vào Applications")
+        }
+        public static var message: String {
+            localized(
+                "DichThat can’t run reliably from the installer. Drag it to Applications, then open it there.",
+                "DichThat không thể hoạt động ổn định từ bộ cài. Hãy kéo app vào Applications rồi mở từ đó."
+            )
+        }
+        public static var openApplications: String {
+            localized("Open Applications", "Mở Applications")
+        }
+        public static var quit: String { localized("Quit", "Thoát") }
     }
 
     public enum Errors {
-        public static let applicationUnavailable = "Application is unavailable."
-        public static let accessibilityRequired = "Accessibility access is required"
-        public static let captureInProgress = "Selection capture is already in progress"
-        public static let noText = "No text to translate"
-        public static let supportedLanguages = "Only English and Vietnamese are supported"
-        public static let ambiguousLanguage = "Couldn’t confidently detect English or Vietnamese"
-        public static let cancelled = "Translation cancelled"
-        public static let timedOut = "Translation timed out"
-        public static let serviceUnavailable = "Translation service unavailable"
-        public static let invalidResponse = "Translation response was invalid"
-        public static let unsupportedResponseLanguage = "Detected language is not supported"
-        public static let sourceLanguageChanged = "Language detection changed; please try again"
+        public static var applicationUnavailable: String {
+            localized("Application is unavailable.", "Ứng dụng hiện không khả dụng.")
+        }
+        public static var accessibilityRequired: String {
+            localized("Accessibility access is required", "Cần cấp quyền Trợ năng")
+        }
+        public static var captureInProgress: String {
+            localized("Selection capture is already in progress", "Đang đọc nội dung được chọn")
+        }
+        public static var noText: String { localized("No text to translate", "Không có nội dung để dịch") }
+        public static var supportedLanguages: String {
+            localized(
+                "Only English and Vietnamese are supported",
+                "Chỉ hỗ trợ tiếng Anh và tiếng Việt"
+            )
+        }
+        public static var ambiguousLanguage: String {
+            localized(
+                "Couldn’t confidently detect English or Vietnamese",
+                "Không thể xác định rõ tiếng Anh hoặc tiếng Việt"
+            )
+        }
+        public static var cancelled: String { localized("Translation cancelled", "Đã huỷ dịch") }
+        public static var timedOut: String { localized("Translation timed out", "Dịch quá thời gian") }
+        public static var serviceUnavailable: String {
+            localized("Translation service unavailable", "Dịch vụ dịch hiện không khả dụng")
+        }
+        public static var invalidResponse: String {
+            localized("Translation response was invalid", "Phản hồi dịch không hợp lệ")
+        }
+        public static var unsupportedResponseLanguage: String {
+            localized("Detected language is not supported", "Ngôn ngữ phát hiện không được hỗ trợ")
+        }
+        public static var sourceLanguageChanged: String {
+            localized(
+                "Language detection changed; please try again",
+                "Kết quả nhận diện ngôn ngữ đã thay đổi; hãy thử lại"
+            )
+        }
+
+        public static func inputTooLong(maximum: Int) -> String {
+            localized(
+                "Selection exceeds \(maximum) Unicode scalars",
+                "Nội dung được chọn vượt quá \(maximum) ký tự Unicode"
+            )
+        }
+
+        public static func serviceError(status: Int) -> String {
+            localized("Translation service error", "Lỗi dịch vụ dịch") + " (\(status))"
+        }
+    }
+
+    public enum ShortcutErrors {
+        public static var persistenceUnavailable: String {
+            localized("Preferences unavailable", "Không thể lưu tuỳ chọn")
+        }
+        public static var unsupportedModifiers: String {
+            localized(
+                "Choose only Control, Option, Command, or Shift.",
+                "Chỉ chọn Control, Option, Command hoặc Shift."
+            )
+        }
+        public static var requiresPrimaryModifier: String {
+            localized(
+                "Choose at least Control, Option, or Command.",
+                "Chọn ít nhất Control, Option hoặc Command."
+            )
+        }
+        public static var unusableKey: String {
+            localized(
+                "Choose one letter A–Z or number 0–9.",
+                "Chọn một chữ cái A–Z hoặc số 0–9."
+            )
+        }
     }
 
     public enum PartOfSpeech {

@@ -36,6 +36,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let launchAtLoginToggle = AppToggleButton()
     private let updateCard = NSVisualEffectView()
     private let updateDetailLabel = NSTextField(labelWithString: "")
+    private let updateMetadataLabel = NSTextField(labelWithString: "")
     private let updateProgress = NSProgressIndicator()
     private let updateButton = NSButton()
     private let reportBugButton = NSButton()
@@ -149,7 +150,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             updateButton.title = AppText.Updates.updateNow
             updateButton.isEnabled = true
         }
-        updateDetailLabel.stringValue = updateDetail(for: updateState)
+        let detail = updateDetail(for: updateState)
+        updateDetailLabel.stringValue = detail.status
+        updateMetadataLabel.stringValue = detail.metadata
     }
 
     func windowDidResignKey(_ notification: Notification) {
@@ -396,14 +399,21 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private func configureUpdateCard() {
         styleCard(updateCard)
-        updateDetailLabel.font = .systemFont(ofSize: 12)
-        updateDetailLabel.textColor = .secondaryLabelColor
+        updateDetailLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        updateDetailLabel.textColor = .labelColor
         updateDetailLabel.lineBreakMode = .byTruncatingTail
+        updateMetadataLabel.font = .systemFont(ofSize: 11)
+        updateMetadataLabel.textColor = .secondaryLabelColor
+        updateMetadataLabel.lineBreakMode = .byTruncatingTail
         updateProgress.style = .spinning
         updateProgress.controlSize = .small
         updateProgress.isDisplayedWhenStopped = false
         updateProgress.isHidden = true
-        let row = NSStackView(views: [updateDetailLabel, NSView(), updateProgress, updateButton])
+        let labels = NSStackView(views: [updateDetailLabel, updateMetadataLabel])
+        labels.orientation = .vertical
+        labels.alignment = .leading
+        labels.spacing = 2
+        let row = NSStackView(views: [labels, NSView(), updateProgress, updateButton])
         row.orientation = .horizontal
         row.alignment = .centerY
         row.spacing = 10
@@ -421,19 +431,19 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         ])
     }
 
-    private func updateDetail(for state: UpdateState) -> String {
+    private func updateDetail(for state: UpdateState) -> (status: String, metadata: String) {
         switch state.phase {
         case .idle:
-            return "\(AppText.Settings.versionPrefix) \(appVersion) • \(lastCheckedText(state.lastCheckedAt))"
+            return (AppText.Updates.title, lastCheckedText(state.lastCheckedAt))
         case .checking:
-            return AppText.Updates.checkingDetail
+            return (AppText.Updates.checkingDetail, lastCheckedText(state.lastCheckedAt))
         case .upToDate:
-            return "\(AppText.Settings.versionPrefix) \(appVersion) • \(AppText.Updates.upToDate) • \(lastCheckedText(state.lastCheckedAt))"
+            return (AppText.Updates.upToDate, lastCheckedText(state.lastCheckedAt))
         case let .available(version):
-            return "\(AppText.Settings.versionPrefix) \(version) \(AppText.Updates.availableSuffix)"
+            return (AppText.Updates.available(version: version), lastCheckedText(state.lastCheckedAt))
         case let .failed(message):
-            let detail = message.isEmpty ? AppText.Updates.failed : message
-            return "\(AppText.Updates.failed): \(detail)"
+            let metadata = message.isEmpty ? lastCheckedText(state.lastCheckedAt) : message
+            return (AppText.Updates.failed, metadata)
         }
     }
 
@@ -443,6 +453,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             return AppText.Updates.lastCheckedJustNow
         }
         let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: AppLanguage.current.localeIdentifier)
         formatter.unitsStyle = .full
         return "\(AppText.Updates.lastCheckedPrefix) \(formatter.localizedString(for: date, relativeTo: Date()))"
     }

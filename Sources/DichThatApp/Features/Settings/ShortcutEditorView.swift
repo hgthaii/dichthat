@@ -56,7 +56,7 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
             button.layer?.borderWidth = 1
             button.toolTip = tooltip
         }
-        keyField.placeholderString = "KEY"
+        keyField.placeholderString = AppText.Settings.shortcutKeyPlaceholder
         keyField.alignment = .center
         keyField.font = .monospacedSystemFont(ofSize: 16, weight: .medium)
         keyField.focusRingType = .none

@@ -13,8 +13,10 @@ public enum SupportedLanguage: String, Codable, CaseIterable, Equatable, Sendabl
 
     public var displayName: String {
         switch self {
-        case .english: return "English"
-        case .vietnamese: return "Vietnamese"
+        case .english:
+            return AppLanguage.current.localized(english: "English", vietnamese: "Tiếng Anh")
+        case .vietnamese:
+            return AppLanguage.current.localized(english: "Vietnamese", vietnamese: "Tiếng Việt")
         }
     }
 }

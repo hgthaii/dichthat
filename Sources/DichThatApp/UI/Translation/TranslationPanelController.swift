@@ -227,11 +227,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         sourceSpeech = nil
         inputField.stringValue = ""
         inputSelectionRange = NSRange(location: 0, length: 0)
-        rebuildPresentation([textLabel(
-            AppText.Translation.inputPrompt,
-            font: .systemFont(ofSize: AppConfiguration.TranslationPanel.loadingFontSize),
-            color: .secondaryLabelColor
-        )])
+        rebuildPresentation([])
         showPanel(anchor: anchor)
         NSApplication.shared.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
@@ -241,11 +237,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     func showInputPrompt(anchor: SelectionAnchor) {
         guard isInputMode else { return }
         sourceSpeech = nil
-        rebuildPresentation([textLabel(
-            AppText.Translation.inputPrompt,
-            font: .systemFont(ofSize: AppConfiguration.TranslationPanel.loadingFontSize),
-            color: .secondaryLabelColor
-        )])
+        rebuildPresentation([])
         showPanel(anchor: anchor)
     }
 

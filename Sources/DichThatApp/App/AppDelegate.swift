@@ -38,9 +38,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var permissionRefreshTask: Task<Void, Never>?
     private var lastKnownAccessibilityTrust = false
     private var isSettingsPresented = false
-    private var permissionFlowPending = false
-    private var permissionFlowObservedDeactivation = false
-    private var relaunchScheduled = false
     private let translationSpeech = TranslationSpeechController()
     private var isTerminating = false
     private var currentShortcut = KeyboardShortcut.defaultShortcut
@@ -116,23 +113,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case let .failure(error):
             settingsState.updateShortcut(
                 display: loadedShortcut.displayText,
-                error: "Shortcut registration failed: \(error.displayText)"
+                error: AppText.Settings.shortcutRegistrationFailed(error.displayText)
             )
+        }
+        if !accessibilityGranted {
+            startPermissionRefreshPolling()
         }
         settingsController?.refresh(state: settingsState)
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
-        if permissionFlowPending, permissionFlowObservedDeactivation {
-            schedulePermissionRelaunch()
-            return
-        }
         refreshPermissionAndObservation()
-    }
-
-    func applicationDidResignActive(_ notification: Notification) {
-        if permissionFlowPending {
-            permissionFlowObservedDeactivation = true
+        if !AXIsProcessTrusted() {
+            startPermissionRefreshPolling()
         }
     }
 
@@ -196,10 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func quit() {
-        statusMenu.cancelTracking()
-        DispatchQueue.main.async {
-            NSApplication.shared.terminate(nil)
-        }
+        NSApplication.shared.terminate(nil)
     }
 
     @objc private func grantAccessibilityFromMenu() {
@@ -264,7 +254,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             )
         }
         isSettingsPresented = true
-        shortcutRegistrar.unregister()
         settingsController?.present(
             state: settingsState,
             updateState: updateCoordinator.state,
@@ -280,18 +269,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func settingsDidDismiss() {
         guard isSettingsPresented else { return }
         isSettingsPresented = false
-        guard !isTerminating else { return }
-        switch shortcutConfiguration.start(handler: shortcutHandler) {
-        case let .success(shortcut):
-            currentShortcut = shortcut
-            settingsState.updateShortcut(display: shortcut.displayText)
-        case let .failure(error):
-            settingsState.updateShortcut(
-                display: currentShortcut.displayText,
-                error: "Shortcut registration failed: \(error.displayText)"
-            )
-        }
-        settingsController?.refresh(state: settingsState)
     }
 
     private func acceptShortcut(_ candidate: KeyboardShortcut) -> String? {
@@ -299,18 +276,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case let .success(shortcut):
             currentShortcut = shortcut
             settingsState.updateShortcut(display: shortcut.displayText)
-            if isSettingsPresented {
-                shortcutRegistrar.unregister()
-            }
             settingsController?.refresh(state: settingsState)
             return nil
         case let .failure(error):
             settingsState.updateShortcut(
                 display: currentShortcut.displayText,
-                error: "Shortcut update failed: \(error.displayText)"
+                error: AppText.Settings.shortcutUpdateFailed(error.displayText)
             )
             settingsController?.refresh(state: settingsState)
-            return "Could not use shortcut: \(error.displayText)"
+            return AppText.Settings.shortcutUnavailable(error.displayText)
         }
     }
 
@@ -505,63 +479,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             )
         )
         rebuildStatusMenu(accessibilityGranted: isTrusted)
-        applySelectionObservationEffect(effect)
         if permissionWasJustGranted {
-            schedulePermissionRelaunch()
+            reactivateAccessibilityIntegrations()
+        } else {
+            applySelectionObservationEffect(effect)
         }
         settingsController?.refresh(state: settingsState)
     }
 
-    private func schedulePermissionRelaunch() {
-        guard !relaunchScheduled else { return }
-        guard Bundle.main.bundleURL.pathExtension == "app" else {
-            reactivateAccessibilityIntegrations()
-            return
-        }
-        relaunchScheduled = true
-        permissionFlowPending = false
-        permissionRefreshTask?.cancel()
-        cancelTranslation(hidePanel: true)
-        selectionObservation.stopForPreference()
-        shortcutRegistrar.unregister()
-        let launcher = Process()
-        launcher.executableURL = URL(fileURLWithPath: "/bin/sh")
-        launcher.arguments = [
-            "-c",
-            "while /bin/kill -0 \"$1\" 2>/dev/null; do /bin/sleep 0.1; done; /usr/bin/open -g \"$2\"",
-            "dichthat-relaunch",
-            String(ProcessInfo.processInfo.processIdentifier),
-            Bundle.main.bundleURL.path,
-        ]
-        do {
-            try launcher.run()
-            NSApplication.shared.terminate(nil)
-        } catch {
-            relaunchScheduled = false
-            reactivateAccessibilityIntegrations()
-        }
-    }
-
     private func reactivateAccessibilityIntegrations() {
+        permissionRefreshTask?.cancel()
         _ = AXUIElementCreateSystemWide()
         selectionObservation.stopForPreference()
         selectionObservation.startOrRefresh(presentsIcon: settingsState.showSelectionIcon)
-
-        switch shortcutConfiguration.start(handler: shortcutHandler) {
-        case let .success(shortcut):
-            currentShortcut = shortcut
-            settingsState.updateShortcut(display: shortcut.displayText)
-        case let .failure(error):
-            settingsState.updateShortcut(
-                display: currentShortcut.displayText,
-                error: "Shortcut registration failed: \(error.displayText)"
-            )
-        }
     }
 
     private func requestAccessibilityPermission() {
-        permissionFlowPending = true
-        permissionFlowObservedDeactivation = false
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
         refreshPermissionAndObservation()

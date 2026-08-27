@@ -3,7 +3,7 @@ import DichThatCore
 
 @MainActor
 final class SelectionCaptureService {
-    private let axCapture = AXSelectionCapture()
+    private static let axCaptureExecutor = AXSelectionCaptureExecutor()
     private let clipboardCapture = ClipboardSelectionCapture()
 
     func capture(
@@ -13,14 +13,25 @@ final class SelectionCaptureService {
         guard AXIsProcessTrusted() else {
             return .failure(.accessibilityPermissionMissing)
         }
-        if let output = axCapture.capture(
+        let accessibilityResult = await Self.axCaptureExecutor.capture(
             frontmostPID: frontmostPID,
             mouseAnchor: mouseAnchor
-        ) {
-            return .success(output)
+        )
+        let selectionBounds: CaptureBounds?
+        switch accessibilityResult {
+        case let .completed(output, capturedBounds):
+            if let output {
+                return .success(output)
+            }
+            selectionBounds = capturedBounds
+        case .busy, .timedOut:
+            return .failure(.selectionUnavailable)
         }
-        let selectionAnchor = axCapture.selectionBounds(frontmostPID: frontmostPID)
-            .map(SelectionAnchor.bounds)
+
+        if Task.isCancelled {
+            return .failure(.selectionUnavailable)
+        }
+        let selectionAnchor = selectionBounds.map(SelectionAnchor.bounds)
         return await clipboardCapture.capture(
             mouseAnchor: mouseAnchor,
             preferredAnchor: selectionAnchor

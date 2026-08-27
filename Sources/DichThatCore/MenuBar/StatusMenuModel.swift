@@ -41,32 +41,39 @@ public enum StatusMenuModel {
         items(accessibilityGranted: true)
     }
 
-    public static func items(accessibilityGranted: Bool) -> [StatusMenuItemModel] {
+    public static func items(
+        accessibilityGranted: Bool,
+        language: AppLanguage = .current
+    ) -> [StatusMenuItemModel] {
         var result: [StatusMenuItemModel] = []
         if !accessibilityGranted {
             result.append(StatusMenuItemModel(
-                title: AppText.Menu.grantAccessibility,
+                title: AppText.Menu.grantAccessibility(language: language),
                 action: .grantAccessibility
             ))
         }
         result.append(StatusMenuItemModel(
-            title: AppText.Menu.checkForUpdates,
+            title: AppText.Menu.checkForUpdates(language: language),
             action: .checkForUpdates
         ))
-        result.append(StatusMenuItemModel(title: AppText.Menu.settings, action: .settings))
         result.append(StatusMenuItemModel(
-            title: "\(AppText.Menu.quitPrefix) \(AppIdentity.productName)",
+            title: AppText.Menu.settings(language: language),
+            action: .settings
+        ))
+        result.append(StatusMenuItemModel(
+            title: "\(AppText.Menu.quitPrefix(language: language)) \(AppIdentity.productName)",
             action: .quit
         ))
         return result
     }
 
     public static func buttonPresentation(
-        accessibilityGranted: Bool
+        accessibilityGranted: Bool,
+        language: AppLanguage = .current
     ) -> StatusButtonPresentation {
         let label = accessibilityGranted
             ? AppIdentity.productName
-            : "\(AppIdentity.productName) — \(AppText.Menu.accessibilityRequiredSuffix)"
+            : "\(AppIdentity.productName) — \(AppText.Menu.accessibilityRequiredSuffix(language: language))"
         return StatusButtonPresentation(
             imageKind: .brandTemplate,
             toolTip: label,
