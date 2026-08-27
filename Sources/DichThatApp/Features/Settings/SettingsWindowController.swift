@@ -34,18 +34,23 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let shortcutErrorLabel = NSTextField(labelWithString: "")
     private let startupErrorLabel = NSTextField(labelWithString: "")
     private let launchAtLoginToggle = AppToggleButton()
+    private let updateCard = NSVisualEffectView()
+    private let updateDetailLabel = NSTextField(labelWithString: "")
+    private let updateProgress = NSProgressIndicator()
     private let updateButton = NSButton()
     private let reportBugButton = NSButton()
     private var isPresented = false
     private var currentShortcutDisplay = ""
     private var launchAtLoginEnabled = false
     private var selectedPage = Page.general
+    private var updateState = UpdateState()
     private let appVersion: String
 
     private let onGrantPermission: @MainActor () -> Void
     private let onCommitShortcut: @MainActor (KeyboardShortcut) -> String?
     private let onToggleLaunchAtLogin: @MainActor (Bool) -> Void
     private let onCheckForUpdates: @MainActor () -> Void
+    private let onInstallUpdate: @MainActor () -> Void
     private let onDismiss: @MainActor () -> Void
 
     init(
@@ -55,6 +60,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         onToggleSelectionIcon: @escaping @MainActor (Bool) -> Void,
         onToggleLaunchAtLogin: @escaping @MainActor (Bool) -> Void,
         onCheckForUpdates: @escaping @MainActor () -> Void,
+        onInstallUpdate: @escaping @MainActor () -> Void,
         onDismiss: @escaping @MainActor () -> Void
     ) {
         self.onGrantPermission = onGrantPermission
@@ -63,6 +69,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         _ = onToggleSelectionIcon
         self.onToggleLaunchAtLogin = onToggleLaunchAtLogin
         self.onCheckForUpdates = onCheckForUpdates
+        self.onInstallUpdate = onInstallUpdate
         self.onDismiss = onDismiss
 
         let window = SettingsWindow(
@@ -91,9 +98,15 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func present(state: SettingsState) {
+    func present(
+        state: SettingsState,
+        updateState: UpdateState,
+        showAbout: Bool = false
+    ) {
         isPresented = true
         refresh(state: state)
+        refresh(updateState: updateState)
+        show(page: showAbout ? .about : selectedPage)
         NSApplication.shared.activate(ignoringOtherApps: true)
         showWindow(nil)
         window?.center()
@@ -111,6 +124,32 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         launchAtLoginToggle.needsDisplay = true
         startupErrorLabel.stringValue = state.launchAtLoginError ?? ""
         startupErrorLabel.isHidden = state.launchAtLoginError == nil
+    }
+
+    func refresh(updateState: UpdateState) {
+        self.updateState = updateState
+        updateProgress.isHidden = !updateState.isChecking
+        if updateState.isChecking {
+            updateProgress.startAnimation(nil)
+        } else {
+            updateProgress.stopAnimation(nil)
+        }
+
+        switch updateState.phase {
+        case .idle:
+            updateButton.title = AppText.Updates.checkForUpdates
+            updateButton.isEnabled = true
+        case .checking:
+            updateButton.title = AppText.Updates.checking
+            updateButton.isEnabled = false
+        case .upToDate, .failed:
+            updateButton.title = AppText.Updates.checkForUpdates
+            updateButton.isEnabled = true
+        case .available:
+            updateButton.title = AppText.Updates.updateNow
+            updateButton.isEnabled = true
+        }
+        updateDetailLabel.stringValue = updateDetail(for: updateState)
     }
 
     func windowDidResignKey(_ notification: Notification) {
@@ -317,7 +356,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         description.alignment = .center
         description.font = .systemFont(ofSize: 12)
         description.textColor = .secondaryLabelColor
-        updateButton.title = AppText.Settings.checkForUpdates
+        configureUpdateCard()
         updateButton.target = self
         updateButton.action = #selector(checkForUpdates)
         updateButton.controlSize = .small
@@ -327,32 +366,85 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         reportBugButton.action = #selector(reportBug)
         reportBugButton.controlSize = .small
         reportBugButton.font = .systemFont(ofSize: 12)
-        let actions = NSStackView(views: [updateButton, reportBugButton])
-        actions.orientation = .horizontal
-        actions.spacing = 8
         let copyright = NSTextField(labelWithString: AppIdentity.copyright)
         copyright.font = .systemFont(ofSize: 10)
         copyright.textColor = .tertiaryLabelColor
         let stack = NSStackView(views: [
-            icon, name, version, description, actions, copyright,
+            icon, name, version, description, updateCard, reportBugButton, copyright,
         ])
         stack.orientation = .vertical
         stack.alignment = .centerX
         stack.spacing = 2
-        stack.setCustomSpacing(16, after: icon)
+        stack.setCustomSpacing(8, after: icon)
         stack.setCustomSpacing(2, after: name)
-        stack.setCustomSpacing(16, after: version)
-        stack.setCustomSpacing(18, after: description)
-        stack.setCustomSpacing(18, after: actions)
+        stack.setCustomSpacing(10, after: version)
+        stack.setCustomSpacing(14, after: description)
+        stack.setCustomSpacing(12, after: updateCard)
+        stack.setCustomSpacing(14, after: reportBugButton)
         stack.translatesAutoresizingMaskIntoConstraints = false
         aboutView.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.centerXAnchor.constraint(equalTo: aboutView.centerXAnchor),
-            stack.centerYAnchor.constraint(equalTo: aboutView.centerYAnchor, constant: -4),
+            stack.centerYAnchor.constraint(equalTo: aboutView.centerYAnchor, constant: -2),
+            updateCard.widthAnchor.constraint(equalTo: aboutView.widthAnchor),
             description.widthAnchor.constraint(equalToConstant: 300),
             icon.widthAnchor.constraint(equalToConstant: AppConfiguration.Settings.aboutIconSize),
             icon.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.aboutIconSize),
         ])
+        refresh(updateState: updateState)
+    }
+
+    private func configureUpdateCard() {
+        styleCard(updateCard)
+        updateDetailLabel.font = .systemFont(ofSize: 12)
+        updateDetailLabel.textColor = .secondaryLabelColor
+        updateDetailLabel.lineBreakMode = .byTruncatingTail
+        updateProgress.style = .spinning
+        updateProgress.controlSize = .small
+        updateProgress.isDisplayedWhenStopped = false
+        updateProgress.isHidden = true
+        let row = NSStackView(views: [updateDetailLabel, NSView(), updateProgress, updateButton])
+        row.orientation = .horizontal
+        row.alignment = .centerY
+        row.spacing = 10
+        row.translatesAutoresizingMaskIntoConstraints = false
+        updateCard.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.leadingAnchor.constraint(equalTo: updateCard.leadingAnchor, constant: 14),
+            row.trailingAnchor.constraint(equalTo: updateCard.trailingAnchor, constant: -12),
+            row.centerYAnchor.constraint(equalTo: updateCard.centerYAnchor),
+            updateCard.heightAnchor.constraint(
+                equalToConstant: AppConfiguration.Settings.updateCardHeight
+            ),
+            updateProgress.widthAnchor.constraint(equalToConstant: 16),
+            updateProgress.heightAnchor.constraint(equalToConstant: 16),
+        ])
+    }
+
+    private func updateDetail(for state: UpdateState) -> String {
+        switch state.phase {
+        case .idle:
+            return "\(AppText.Settings.versionPrefix) \(appVersion) • \(lastCheckedText(state.lastCheckedAt))"
+        case .checking:
+            return AppText.Updates.checkingDetail
+        case .upToDate:
+            return "\(AppText.Settings.versionPrefix) \(appVersion) • \(AppText.Updates.upToDate) • \(lastCheckedText(state.lastCheckedAt))"
+        case let .available(version):
+            return "\(AppText.Settings.versionPrefix) \(version) \(AppText.Updates.availableSuffix)"
+        case let .failed(message):
+            let detail = message.isEmpty ? AppText.Updates.failed : message
+            return "\(AppText.Updates.failed): \(detail)"
+        }
+    }
+
+    private func lastCheckedText(_ date: Date?) -> String {
+        guard let date else { return AppText.Updates.lastCheckedNever }
+        if abs(date.timeIntervalSinceNow) < 60 {
+            return AppText.Updates.lastCheckedJustNow
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return "\(AppText.Updates.lastCheckedPrefix) \(formatter.localizedString(for: date, relativeTo: Date()))"
     }
 
     private func styleCard(_ card: NSVisualEffectView) {
@@ -443,6 +535,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     @objc private func checkForUpdates() {
-        onCheckForUpdates()
+        if updateState.availableVersion == nil {
+            onCheckForUpdates()
+        } else {
+            onInstallUpdate()
+        }
     }
 }

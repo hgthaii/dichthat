@@ -1,6 +1,7 @@
 public enum AppText {
     public enum Menu {
         public static let grantAccessibility = "Grant Accessibility Access…"
+        public static let checkForUpdates = "Check for Updates…"
         public static let settings = "Settings…"
         public static let quitPrefix = "Quit"
         public static let accessibilityRequiredSuffix = "Accessibility permission required"
@@ -49,6 +50,20 @@ public enum AppText {
         public static let unsupportedShortcut = "Unsupported"
         public static let addShortcutModifier = "Add ⌘, ⌥, or ⌃"
         public static let chooseAnotherKey = "Choose another key"
+    }
+
+    public enum Updates {
+        public static let checkForUpdates = "Check for Updates"
+        public static let checking = "Checking…"
+        public static let checkingDetail = "Checking for a new version…"
+        public static let updateNow = "Update Now"
+        public static let upToDate = "DichThat is up to date"
+        public static let availableSuffix = "is available"
+        public static let lastCheckedNever = "Never checked"
+        public static let lastCheckedJustNow = "Last checked just now"
+        public static let lastCheckedPrefix = "Last checked"
+        public static let failed = "Couldn’t check for updates"
+        public static let checkUnavailable = "Another update operation is already running"
     }
 
     public enum Installation {
