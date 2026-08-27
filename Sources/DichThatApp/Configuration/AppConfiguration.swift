@@ -19,7 +19,9 @@ enum AppConfiguration {
     }
 
     enum Accessibility {
+        static let captureQueueLabel = "dev.hgthaii.dichthat.accessibility-capture"
         static let searchDuration: CFTimeInterval = 1.25
+        static let captureTimeout: TimeInterval = 3
         static let maximumDepth = 12
         static let maximumNodes = 180
         static let maximumCalls = 360

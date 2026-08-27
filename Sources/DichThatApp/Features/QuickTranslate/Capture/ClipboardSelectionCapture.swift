@@ -4,6 +4,30 @@ import DichThatCore
 
 @MainActor
 final class ClipboardSelectionCapture {
+    private struct ItemSnapshot {
+        let representations: [(type: NSPasteboard.PasteboardType, data: Data)]
+
+        init?(item: NSPasteboardItem) {
+            var representations: [(type: NSPasteboard.PasteboardType, data: Data)] = []
+            representations.reserveCapacity(item.types.count)
+            for type in item.types {
+                guard let data = item.data(forType: type) else { return nil }
+                representations.append((type: type, data: data))
+            }
+            self.representations = representations
+        }
+
+        func makePasteboardItem() -> NSPasteboardItem? {
+            let item = NSPasteboardItem()
+            for representation in representations {
+                guard item.setData(representation.data, forType: representation.type) else {
+                    return nil
+                }
+            }
+            return item
+        }
+    }
+
     func capture(
         mouseAnchor: CapturePoint,
         preferredAnchor: SelectionAnchor? = nil
@@ -14,9 +38,12 @@ final class ClipboardSelectionCapture {
 
         let pasteboard = NSPasteboard.general
         let originalChangeCount = pasteboard.changeCount
-        var snapshotItems: [NSPasteboardItem]
+        var snapshotItems: [ItemSnapshot]
         if let items = pasteboard.pasteboardItems {
-            snapshotItems = items
+            snapshotItems = items.compactMap(ItemSnapshot.init(item:))
+            guard snapshotItems.count == items.count else {
+                return .failure(.clipboardSnapshotUnavailable)
+            }
         } else if let types = pasteboard.types, !types.isEmpty {
             return .failure(.clipboardSnapshotUnavailable)
         } else {
@@ -76,8 +103,12 @@ final class ClipboardSelectionCapture {
         }
 
         let snapshotWasEmpty = snapshotItems.isEmpty
+        let restoredItems = snapshotItems.compactMap { $0.makePasteboardItem() }
+        guard restoredItems.count == snapshotItems.count else {
+            return .failure(.clipboardRestoreFailed)
+        }
         let clearChangeCount = pasteboard.clearContents()
-        let writeSucceeded: Bool? = snapshotWasEmpty ? nil : pasteboard.writeObjects(snapshotItems)
+        let writeSucceeded: Bool? = snapshotWasEmpty ? nil : pasteboard.writeObjects(restoredItems)
         let validation = ClipboardTransaction.validateRestore(
             snapshotWasEmpty: snapshotWasEmpty,
             writeSucceeded: writeSucceeded,
