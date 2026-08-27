@@ -87,7 +87,7 @@ enum AppConfiguration {
         static let maximumHeight: CGFloat = 520
         static let screenMargin: CGFloat = 40
         static let minimumHeight: CGFloat = 120
-        static let minimumInputHeight: CGFloat = 92
+        static let minimumInputHeight: CGFloat = 66
     }
 
     enum Settings {
@@ -106,6 +106,6 @@ enum AppConfiguration {
         static let toggleHeight: CGFloat = 20
         static let toggleInset: CGFloat = 2
         static let aboutIconSize: CGFloat = 52
-        static let updateCardHeight: CGFloat = 58
+        static let updateCardHeight: CGFloat = 64
     }
 }
