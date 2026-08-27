@@ -27,3 +27,17 @@ func terminationReplyIsExactlyOnce() {
     #expect(state.requestTermination() == .terminateNow)
     #expect(state.begin() == .ignoredTerminationPending)
 }
+
+@Test("Immediate termination cancels an active capture")
+func immediateTerminationCancelsCapture() {
+    var state = CaptureRequestState()
+    #expect(state.begin() == .accepted(requestID: 1))
+
+    state.cancelForImmediateTermination()
+
+    #expect(state.activeRequestID == nil)
+    #expect(!state.terminationPending)
+    #expect(state.terminationReplyIssued)
+    #expect(state.complete(requestID: 1) == .stale)
+    #expect(state.begin() == .ignoredTerminationPending)
+}

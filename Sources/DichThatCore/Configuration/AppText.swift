@@ -51,6 +51,13 @@ public enum AppText {
         public static let chooseAnotherKey = "Choose another key"
     }
 
+    public enum Installation {
+        public static let title = "Move DichThat to Applications"
+        public static let message = "DichThat can’t run reliably from the installer. Drag it to Applications, then open it there."
+        public static let openApplications = "Open Applications"
+        public static let quit = "Quit"
+    }
+
     public enum Errors {
         public static let applicationUnavailable = "Application is unavailable."
         public static let accessibilityRequired = "Accessibility access is required"

@@ -184,14 +184,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         isTerminating = true
+        permissionRefreshTask?.cancel()
+        captureTask?.cancel()
+        captureTask = nil
+        captureContext = nil
+        capturePreferredAnchor = nil
+        captureRequestState.cancelForImmediateTermination()
         cancelTranslation(hidePanel: true)
-        if relaunchScheduled { return .terminateNow }
-        switch captureRequestState.requestTermination() {
-        case .terminateNow:
-            return .terminateNow
-        case .terminateLater:
-            return .terminateLater
-        }
+        selectionObservation.stop()
+        shortcutRegistrar.unregister()
+        return .terminateNow
     }
 
     @objc private func quit() {
