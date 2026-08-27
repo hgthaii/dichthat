@@ -86,6 +86,7 @@ jobs:
           echo "DICHTHAT_BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> "${GITHUB_ENV}"
 
       - name: Import release signing certificate
+        timeout-minutes: 3
         env:
           DICHTHAT_SIGNING_CERTIFICATE_P12_BASE64: ${{ secrets.DICHTHAT_SIGNING_CERTIFICATE_P12_BASE64 }}
           DICHTHAT_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.DICHTHAT_SIGNING_CERTIFICATE_PASSWORD }}
