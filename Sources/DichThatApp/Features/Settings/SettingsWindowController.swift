@@ -355,10 +355,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let version = NSTextField(labelWithString: "\(AppText.Settings.versionPrefix) \(appVersion)")
         version.font = .systemFont(ofSize: 11)
         version.textColor = .secondaryLabelColor
-        let description = NSTextField(wrappingLabelWithString: AppText.Settings.aboutDescription)
-        description.alignment = .center
-        description.font = .systemFont(ofSize: 12)
-        description.textColor = .secondaryLabelColor
         configureUpdateCard()
         updateButton.target = self
         updateButton.action = #selector(checkForUpdates)
@@ -373,15 +369,14 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         copyright.font = .systemFont(ofSize: 10)
         copyright.textColor = .tertiaryLabelColor
         let stack = NSStackView(views: [
-            icon, name, version, description, updateCard, reportBugButton, copyright,
+            icon, name, version, updateCard, reportBugButton, copyright,
         ])
         stack.orientation = .vertical
         stack.alignment = .centerX
         stack.spacing = 2
         stack.setCustomSpacing(8, after: icon)
         stack.setCustomSpacing(2, after: name)
-        stack.setCustomSpacing(10, after: version)
-        stack.setCustomSpacing(14, after: description)
+        stack.setCustomSpacing(18, after: version)
         stack.setCustomSpacing(12, after: updateCard)
         stack.setCustomSpacing(14, after: reportBugButton)
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -390,7 +385,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             stack.centerXAnchor.constraint(equalTo: aboutView.centerXAnchor),
             stack.centerYAnchor.constraint(equalTo: aboutView.centerYAnchor, constant: -2),
             updateCard.widthAnchor.constraint(equalTo: aboutView.widthAnchor),
-            description.widthAnchor.constraint(equalToConstant: 300),
             icon.widthAnchor.constraint(equalToConstant: AppConfiguration.Settings.aboutIconSize),
             icon.heightAnchor.constraint(equalToConstant: AppConfiguration.Settings.aboutIconSize),
         ])

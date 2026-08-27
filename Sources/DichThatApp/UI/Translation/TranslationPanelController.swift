@@ -73,12 +73,15 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
             let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             if modifiers == .command,
-               event.charactersIgnoringModifiers?.lowercased() == "a" {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self,
-                          let editor = self.fieldEditor(false, for: nil) as? NSTextView
-                    else { return }
-                    editor.selectAll(nil)
+               let key = event.charactersIgnoringModifiers?.lowercased(),
+               ["a", "c", "x", "v"].contains(key),
+               let editor = fieldEditor(false, for: nil) as? NSTextView {
+                switch key {
+                case "a": editor.selectAll(nil)
+                case "c": editor.copy(nil)
+                case "x": editor.cut(nil)
+                case "v": editor.paste(nil)
+                default: break
                 }
                 return true
             }
@@ -98,6 +101,8 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     private let stack = NSStackView()
     private let inputField = NSTextField()
     private let inputContainer = NSVisualEffectView()
+    private var inputContainerHeightConstraint: NSLayoutConstraint!
+    private var inputFieldHeightConstraint: NSLayoutConstraint!
     private let onDismiss: @MainActor () -> Void
     private let onSpeak: @MainActor (TranslationSpeechContent) -> Void
     private var sourceSpeech: TranslationSpeechContent?
@@ -106,6 +111,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     private var isInputMode = false
     private var onInputChanged: (@MainActor (String) -> Void)?
     private var inputSelectionRange = NSRange(location: 0, length: 0)
+    private var currentPanelAnchor: SelectionAnchor?
 
     var isVisible: Bool { panel.isVisible }
 
@@ -186,6 +192,11 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         inputField.focusRingType = .none
         inputField.isBezeled = false
         inputField.drawsBackground = false
+        inputField.maximumNumberOfLines = 0
+        inputField.lineBreakMode = .byWordWrapping
+        inputField.cell?.usesSingleLineMode = false
+        inputField.cell?.wraps = true
+        inputField.cell?.isScrollable = false
         inputField.translatesAutoresizingMaskIntoConstraints = false
 
         let searchIcon = NSImageView(image: NSImage(
@@ -202,10 +213,14 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         inputContainer.layer?.masksToBounds = true
         inputContainer.addSubview(searchIcon)
         inputContainer.addSubview(inputField)
-        NSLayoutConstraint.activate([
-            inputContainer.heightAnchor.constraint(
+        inputContainerHeightConstraint = inputContainer.heightAnchor.constraint(
             equalToConstant: AppConfiguration.TranslationPanel.inputHeight
-            ),
+        )
+        inputFieldHeightConstraint = inputField.heightAnchor.constraint(
+            equalToConstant: AppConfiguration.TranslationPanel.inputTextMinimumHeight
+        )
+        NSLayoutConstraint.activate([
+            inputContainerHeightConstraint,
             searchIcon.leadingAnchor.constraint(equalTo: inputContainer.leadingAnchor, constant: 8),
             searchIcon.centerYAnchor.constraint(equalTo: inputContainer.centerYAnchor),
             searchIcon.widthAnchor.constraint(equalToConstant: 14),
@@ -213,7 +228,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
             inputField.leadingAnchor.constraint(equalTo: searchIcon.trailingAnchor, constant: 6),
             inputField.trailingAnchor.constraint(equalTo: inputContainer.trailingAnchor, constant: -8),
             inputField.centerYAnchor.constraint(equalTo: inputContainer.centerYAnchor),
-            inputField.heightAnchor.constraint(equalToConstant: 20),
+            inputFieldHeightConstraint,
         ])
     }
 
@@ -226,6 +241,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         self.onInputChanged = onTextChanged
         sourceSpeech = nil
         inputField.stringValue = ""
+        updateInputHeight()
         inputSelectionRange = NSRange(location: 0, length: 0)
         rebuildPresentation([])
         showPanel(anchor: anchor)
@@ -335,6 +351,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         isInputMode = false
         panel.hidesOnDeactivate = false
         onInputChanged = nil
+        currentPanelAnchor = nil
         removeMouseMonitors()
         panel.orderOut(nil)
         clearContent()
@@ -587,6 +604,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     }
 
     private func showPanel(anchor: SelectionAnchor) {
+        currentPanelAnchor = anchor
         updateAppearance(NSApplication.shared.effectiveAppearance)
         let mainHeight = NSScreen.screens.first?.frame.height ?? 0
         let reference: NSPoint
@@ -610,15 +628,20 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
             )
         )
         let maximumHeight = visible.height - AppConfiguration.TranslationPanel.screenMargin
-        panel.setContentSize(NSSize(width: width, height: maximumHeight))
+        let minimumHeight = isInputMode
+            ? AppConfiguration.TranslationPanel.minimumInputHeight
+            : AppConfiguration.TranslationPanel.minimumHeight
+        let measurementHeight = min(
+            max(panel.contentLayoutRect.height, minimumHeight),
+            maximumHeight
+        )
+        panel.setContentSize(NSSize(width: width, height: measurementHeight))
         effect.layoutSubtreeIfNeeded()
         let documentHeight = layoutDocument(width: scroll.contentView.bounds.width)
         let height = min(
             max(
                 documentHeight + AppConfiguration.TranslationPanel.tailHeight,
-                isInputMode
-                    ? AppConfiguration.TranslationPanel.minimumInputHeight
-                    : AppConfiguration.TranslationPanel.minimumHeight
+                minimumHeight
             ),
             maximumHeight
         )
@@ -640,6 +663,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         )
         panel.setFrameOrigin(NSPoint(x: placement.origin.x, y: placement.origin.y))
         updateBubbleMask(side: placement.tailSide, width: width, height: height)
+        panel.invalidateShadow()
         panel.orderFrontRegardless()
         if isInputMode {
             panel.makeKeyAndOrderFront(nil)
@@ -668,6 +692,33 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         editor.setSelectedRange(NSRange(location: location, length: length))
     }
 
+    private func updateInputHeight() {
+        let minimumTextHeight = AppConfiguration.TranslationPanel.inputTextMinimumHeight
+        let availableWidth = inputField.bounds.width
+        guard !inputField.stringValue.isEmpty, availableWidth > 1 else {
+            inputFieldHeightConstraint.constant = minimumTextHeight
+            inputContainerHeightConstraint.constant = AppConfiguration.TranslationPanel.inputHeight
+            return
+        }
+
+        let font = inputField.font ?? .systemFont(
+            ofSize: AppConfiguration.TranslationPanel.inputFontSize
+        )
+        let measuredBounds = NSAttributedString(
+            string: inputField.stringValue,
+            attributes: [.font: font]
+        ).boundingRect(
+            with: NSSize(width: availableWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading]
+        )
+        let textHeight = max(minimumTextHeight, ceil(measuredBounds.height))
+        inputFieldHeightConstraint.constant = textHeight
+        inputContainerHeightConstraint.constant = max(
+            AppConfiguration.TranslationPanel.inputHeight,
+            textHeight + AppConfiguration.TranslationPanel.inputVerticalPadding
+        )
+    }
+
     private func updateBubbleMask(side: TranslationPopupTailSide, width: CGFloat, height: CGFloat) {
         let tailHeight = AppConfiguration.TranslationPanel.tailHeight
         let top = max(1, height - tailHeight)
@@ -694,8 +745,22 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         path.addLine(to: CGPoint(x: 0, y: radius))
         path.addQuadCurve(to: CGPoint(x: radius, y: 0), control: CGPoint(x: 0, y: 0))
         path.closeSubpath()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         bubbleMask.frame = CGRect(x: 0, y: 0, width: width, height: height)
         bubbleMask.path = path
+        CATransaction.commit()
+
+        effect.maskImage = NSImage(
+            size: NSSize(width: width, height: height),
+            flipped: false
+        ) { bounds in
+            guard let context = NSGraphicsContext.current?.cgContext else { return false }
+            context.setFillColor(NSColor.white.cgColor)
+            context.addPath(path)
+            context.fillPath()
+            return bounds.width > 0 && bounds.height > 0
+        }
     }
 
     private func installMouseMonitorsIfNeeded() {
@@ -764,6 +829,10 @@ extension TranslationPanelController {
     func controlTextDidChange(_ notification: Notification) {
         guard notification.object as? NSTextField === inputField else { return }
         captureInputSelection()
+        updateInputHeight()
+        if panel.isVisible, let currentPanelAnchor {
+            showPanel(anchor: currentPanelAnchor)
+        }
         onInputChanged?(inputField.stringValue)
     }
 }

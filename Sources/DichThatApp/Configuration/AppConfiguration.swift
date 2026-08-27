@@ -61,6 +61,8 @@ enum AppConfiguration {
         static let headerFontSize: CGFloat = 11
         static let inputFontSize: CGFloat = 15
         static let inputHeight: CGFloat = 28
+        static let inputTextMinimumHeight: CGFloat = 20
+        static let inputVerticalPadding: CGFloat = 8
         static let loadingFontSize: CGFloat = 14
         static let failureFontSize: CGFloat = 14
         static let compactSourceFontSize: CGFloat = 12
