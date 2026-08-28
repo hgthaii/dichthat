@@ -27,8 +27,10 @@ openssl req \
     -keyout "${working_directory}/private-key.pem" \
     -out "${working_directory}/certificate.pem"
 
+# LibreSSL otherwise encrypts certificates with RC2-40, which OpenSSL 3 rejects.
 openssl pkcs12 \
     -export \
+    -descert \
     -name "${certificate_name}" \
     -inkey "${working_directory}/private-key.pem" \
     -in "${working_directory}/certificate.pem" \
