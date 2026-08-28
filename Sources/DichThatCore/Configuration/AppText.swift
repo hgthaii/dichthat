@@ -61,6 +61,9 @@ public enum AppText {
         public static var sourceWordSpeechAccessibility: String {
             localized("Pronounce source word", "Phát âm từ gốc")
         }
+        public static var pronunciationSpeechAccessibility: String {
+            localized("Play US pronunciation", "Nghe phát âm Anh–Mỹ")
+        }
         public static var sourceTextSpeechAccessibility: String {
             localized("Pronounce source text", "Phát âm nội dung gốc")
         }
@@ -83,6 +86,27 @@ public enum AppText {
             )
         }
         public static var grantAccess: String { localized("Grant Access", "Cấp quyền") }
+        public static var translationLanguagesTitle: String {
+            localized("Translation languages required", "Cần tải ngôn ngữ dịch")
+        }
+        public static var translationLanguagesDescription: String {
+            localized(
+                "English and Vietnamese will download when you translate for the first time.",
+                "Tiếng Anh và tiếng Việt sẽ được tải khi bạn dịch lần đầu."
+            )
+        }
+        public static var downloadTranslationLanguages: String {
+            localized("Download", "Tải xuống")
+        }
+        public static var downloadingTranslationLanguages: String {
+            localized("Downloading English and Vietnamese…", "Đang tải tiếng Anh và tiếng Việt…")
+        }
+        public static var translationLanguageDownloadFailed: String {
+            localized(
+                "Couldn’t download the translation languages. Try again.",
+                "Không thể tải ngôn ngữ dịch. Hãy thử lại."
+            )
+        }
         public static var openSettings: String { localized("Open Settings", "Mở Cài đặt") }
         public static var shortcutTitle: String { localized("Keyboard Shortcut", "Phím tắt") }
         public static var shortcutSubtitle: String {
@@ -112,6 +136,11 @@ public enum AppText {
             localized("Check for Updates", "Kiểm tra cập nhật")
         }
         public static var reportABug: String { localized("Report a Bug", "Báo lỗi") }
+        public static var dataSourcesTab: String { localized("Data", "Dữ liệu") }
+        public static var dataSources: String { localized("Data Sources", "Nguồn dữ liệu") }
+        public static var dataSourcesUnavailable: String {
+            localized("Data source information is unavailable.", "Không thể tải thông tin nguồn dữ liệu.")
+        }
         public static var versionPrefix: String { localized("Version", "Phiên bản") }
         public static var aboutDescription: String {
             aboutDescription(language: .current)
@@ -241,9 +270,14 @@ public enum AppText {
             )
         }
         public static var cancelled: String { localized("Translation cancelled", "Đã huỷ dịch") }
-        public static var timedOut: String { localized("Translation timed out", "Dịch quá thời gian") }
-        public static var serviceUnavailable: String {
-            localized("Translation service unavailable", "Dịch vụ dịch hiện không khả dụng")
+        public static var translationUnavailable: String {
+            translationUnavailable(language: .current)
+        }
+        public static func translationUnavailable(language: AppLanguage) -> String {
+            language.localized(
+                english: "Apple Translation is unavailable. Check that English and Vietnamese are installed in Translation Languages.",
+                vietnamese: "Apple Translation chưa sẵn sàng. Hãy kiểm tra tiếng Anh và tiếng Việt đã được cài trong Ngôn ngữ dịch."
+            )
         }
         public static var invalidResponse: String {
             localized("Translation response was invalid", "Phản hồi dịch không hợp lệ")
@@ -265,9 +299,6 @@ public enum AppText {
             )
         }
 
-        public static func serviceError(status: Int) -> String {
-            localized("Translation service error", "Lỗi dịch vụ dịch") + " (\(status))"
-        }
     }
 
     public enum ShortcutErrors {

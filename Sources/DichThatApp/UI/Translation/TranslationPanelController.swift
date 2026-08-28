@@ -54,9 +54,22 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
 
         private func refreshAppearance() {
             layer?.backgroundColor = SettingsAppearance.resolved(
-                NSColor.controlAccentColor.withAlphaComponent(0.14),
+                NSColor.white.withAlphaComponent(
+                    AppConfiguration.TranslationPanel.badgeBackgroundOpacity
+                ),
                 for: effectiveAppearance
             )
+            layer?.borderColor = SettingsAppearance.resolved(
+                NSColor.white.withAlphaComponent(
+                    AppConfiguration.TranslationPanel.badgeBorderOpacity
+                ),
+                for: effectiveAppearance
+            )
+            layer?.borderWidth = AppConfiguration.TranslationPanel.badgeBorderWidth
+            layer?.shadowColor = SettingsAppearance.resolved(.black, for: effectiveAppearance)
+            layer?.shadowOpacity = AppConfiguration.TranslationPanel.badgeShadowOpacity
+            layer?.shadowRadius = AppConfiguration.TranslationPanel.badgeShadowRadius
+            layer?.shadowOffset = AppConfiguration.TranslationPanel.badgeShadowOffset
         }
     }
 
@@ -103,8 +116,11 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     private let inputContainer = NSVisualEffectView()
     private var inputContainerHeightConstraint: NSLayoutConstraint!
     private var inputFieldHeightConstraint: NSLayoutConstraint!
+    private var scrollTopConstraint: NSLayoutConstraint!
+    private var scrollBottomConstraint: NSLayoutConstraint!
     private let onDismiss: @MainActor () -> Void
     private let onSpeak: @MainActor (TranslationSpeechContent) -> Void
+    private let shouldIgnoreOutsideClick: @MainActor (CapturePoint) -> Bool
     private var sourceSpeech: TranslationSpeechContent?
     private var globalMouseMonitor: Any?
     private var localMouseMonitor: Any?
@@ -112,6 +128,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     private var onInputChanged: (@MainActor (String) -> Void)?
     private var inputSelectionRange = NSRange(location: 0, length: 0)
     private var currentPanelAnchor: SelectionAnchor?
+    private var quickTranslationTailEdge: TranslationPopupTailEdge?
 
     var isVisible: Bool { panel.isVisible }
 
@@ -121,10 +138,12 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
 
     init(
         onDismiss: @escaping @MainActor () -> Void,
-        onSpeak: @escaping @MainActor (TranslationSpeechContent) -> Void
+        onSpeak: @escaping @MainActor (TranslationSpeechContent) -> Void,
+        shouldIgnoreOutsideClick: @escaping @MainActor (CapturePoint) -> Bool = { _ in false }
     ) {
         self.onDismiss = onDismiss
         self.onSpeak = onSpeak
+        self.shouldIgnoreOutsideClick = shouldIgnoreOutsideClick
         panel = ResultPanel(
             contentRect: NSRect(
                 x: 0,
@@ -175,14 +194,16 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         document.translatesAutoresizingMaskIntoConstraints = true
         document.addSubview(stack)
         scroll.documentView = document
+        scrollTopConstraint = scroll.topAnchor.constraint(
+            equalTo: effect.topAnchor,
+            constant: AppConfiguration.TranslationPanel.tailHeight
+        )
+        scrollBottomConstraint = scroll.bottomAnchor.constraint(equalTo: effect.bottomAnchor)
         NSLayoutConstraint.activate([
             scroll.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
-            scroll.topAnchor.constraint(
-                equalTo: effect.topAnchor,
-                constant: AppConfiguration.TranslationPanel.tailHeight
-            ),
-            scroll.bottomAnchor.constraint(equalTo: effect.bottomAnchor),
+            scrollTopConstraint,
+            scrollBottomConstraint,
         ])
         panel.onEscape = { [weak self] in self?.dismiss() }
 
@@ -261,6 +282,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         isInputMode = false
         panel.hidesOnDeactivate = false
         onInputChanged = nil
+        quickTranslationTailEdge = nil
     }
 
     func showLoading(anchor: SelectionAnchor) {
@@ -273,21 +295,21 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
                 color: .secondaryLabelColor
             ),
         ])
-        showPanel(anchor: anchor)
+        showPanel(anchor: anchor, lockQuickTranslationEdge: true)
     }
 
     func show(
         output: TranslationOutput,
         anchor: SelectionAnchor,
-        sourceVoiceAvailable: Bool
+        availableVoiceCodes: Set<String>
     ) {
         sourceSpeech = TranslationSpeechContent(text: output.sourceText, language: output.source)
         var views: [NSView] = [header("\(output.source.displayName) → \(output.target.displayName)")]
         if let enrichment = output.enrichment {
             views.append(sourceWordView(
                 text: output.sourceText,
-                phonetic: enrichment.phonetic,
-                voiceAvailable: sourceVoiceAvailable
+                pronunciations: enrichment.displayPronunciations,
+                availableVoiceCodes: availableVoiceCodes
             ))
         } else {
             views.append(sourceSpeechRow(
@@ -296,7 +318,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
                     ofSize: AppConfiguration.TranslationPanel.compactSourceFontSize
                 ),
                 color: .secondaryLabelColor,
-                voiceAvailable: sourceVoiceAvailable
+                voiceAvailable: availableVoiceCodes.contains(output.source.speechVoiceCode)
             ))
         }
         views.append(textLabel(
@@ -320,7 +342,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
                 views.append(contentsOf: meanings.map(meaningView))
             }
         }
-        if !sourceVoiceAvailable {
+        if availableVoiceCodes.isEmpty {
             views.append(textLabel(
                 AppText.Translation.pronunciationUnavailable,
                 font: .systemFont(
@@ -352,6 +374,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         panel.hidesOnDeactivate = false
         onInputChanged = nil
         currentPanelAnchor = nil
+        quickTranslationTailEdge = nil
         removeMouseMonitors()
         panel.orderOut(nil)
         clearContent()
@@ -405,8 +428,12 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         return row
     }
 
-    private func sourceWordView(text: String, phonetic: String?, voiceAvailable: Bool) -> NSView {
-        let labels = NSStackView(views: [
+    private func sourceWordView(
+        text: String,
+        pronunciations: [EnglishPronunciation],
+        availableVoiceCodes: Set<String>
+    ) -> NSView {
+        let container = NSStackView(views: [
             textLabel(
                 text,
                 font: .systemFont(
@@ -416,25 +443,38 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
                 color: .labelColor
             ),
         ])
-        labels.orientation = .vertical
-        labels.alignment = .leading
-        labels.spacing = AppConfiguration.TranslationPanel.sourceWordSpacing
-        if let phonetic {
-            labels.addArrangedSubview(textLabel(
-                phonetic,
-                font: .systemFont(ofSize: AppConfiguration.TranslationPanel.phoneticFontSize),
-                color: .secondaryLabelColor
-            ))
+        container.orientation = .vertical
+        container.alignment = .leading
+        container.spacing = AppConfiguration.TranslationPanel.sourceWordSpacing
+
+        let phonetic = pronunciations.map(\.phonetic).joined(separator: " · ")
+        if !phonetic.isEmpty {
+            let row = pronunciationRow(
+                phonetic: phonetic,
+                voiceAvailable: availableVoiceCodes.contains("en-US")
+            )
+            container.addArrangedSubview(row)
+            row.widthAnchor.constraint(equalTo: container.widthAnchor).isActive = true
         }
-        var rowViews: [NSView] = [labels, NSView()]
+        return container
+    }
+
+    private func pronunciationRow(
+        phonetic: String,
+        voiceAvailable: Bool
+    ) -> NSView {
+        var views: [NSView] = [textLabel(
+            phonetic,
+            font: .systemFont(ofSize: AppConfiguration.TranslationPanel.phoneticFontSize),
+            color: .secondaryLabelColor
+        )]
         if voiceAvailable {
-            rowViews.append(sourceSpeakerButton(
-                accessibility: AppText.Translation.sourceWordSpeechAccessibility
-            ))
+            views.append(pronunciationSpeakerButton())
         }
-        let row = NSStackView(views: rowViews)
+        let row = NSStackView(views: views)
         row.orientation = .horizontal
         row.alignment = .centerY
+        row.spacing = AppConfiguration.TranslationPanel.pronunciationRowSpacing
         return row
     }
 
@@ -464,6 +504,15 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
             "speaker.wave.2",
             action: #selector(sourceSpeechClicked(_:)),
             accessibility: accessibility,
+            enabled: true
+        )
+    }
+
+    private func pronunciationSpeakerButton() -> NSButton {
+        symbolButton(
+            "speaker.wave.2",
+            action: #selector(pronunciationSpeechClicked(_:)),
+            accessibility: AppText.Translation.pronunciationSpeechAccessibility,
             enabled: true
         )
     }
@@ -545,7 +594,7 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
             ofSize: AppConfiguration.TranslationPanel.badgeFontSize,
             weight: .semibold
         )
-        label.textColor = .controlAccentColor
+        label.textColor = NSColor(calibratedWhite: 0.12, alpha: 1)
         label.usesSingleLineMode = true
         label.maximumNumberOfLines = 1
         label.lineBreakMode = .byClipping
@@ -593,8 +642,11 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
     ) -> NSButton {
         let image = NSImage(systemSymbolName: symbol, accessibilityDescription: accessibility)!
         let button = NSButton(image: image, target: self, action: action)
-        button.bezelStyle = .inline
+        button.isBordered = false
+        button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
+        button.contentTintColor = .secondaryLabelColor
+        button.focusRingType = .none
         button.wantsLayer = true
         button.isEnabled = enabled
         button.toolTip = enabled ? accessibility : AppText.Translation.voiceUnavailable
@@ -603,22 +655,15 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         return button
     }
 
-    private func showPanel(anchor: SelectionAnchor) {
+    private func showPanel(
+        anchor: SelectionAnchor,
+        lockQuickTranslationEdge: Bool = false
+    ) {
         currentPanelAnchor = anchor
         updateAppearance(NSApplication.shared.effectiveAppearance)
-        let mainHeight = NSScreen.screens.first?.frame.height ?? 0
-        let reference: NSPoint
-        switch anchor {
-        case let .bounds(bounds):
-            let converted = SelectionIconGeometry.appKitBounds(fromQuartz: bounds, mainDisplayHeight: mainHeight)
-            reference = NSPoint(x: converted.x, y: converted.y)
-        case let .mouse(point):
-            reference = NSPoint(x: point.x, y: point.y)
-        }
-        let screen = NSScreen.screens.first(where: { $0.frame.contains(reference) })
-            ?? NSScreen.main
-            ?? NSScreen.screens.first
-        guard let screen else { return }
+        guard let resolution = ScreenGeometryResolver.resolve(anchor: anchor) else { return }
+        let screen = resolution.screen
+        let mainHeight = resolution.mainDisplayHeight
         let visible = screen.visibleFrame
         let width = min(
             AppConfiguration.TranslationPanel.maximumWidth,
@@ -627,7 +672,33 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
                 visible.width - AppConfiguration.TranslationPanel.screenMargin
             )
         )
-        let maximumHeight = visible.height - AppConfiguration.TranslationPanel.screenMargin
+        let visibleBounds = CaptureBounds(
+            x: visible.minX, y: visible.minY,
+            width: visible.width, height: visible.height
+        )
+        if lockQuickTranslationEdge, !isInputMode, quickTranslationTailEdge == nil {
+            quickTranslationTailEdge = TranslationPopupGeometry.preferredTailEdge(
+                anchor: anchor,
+                mainDisplayHeight: mainHeight,
+                visibleFrame: visibleBounds,
+                selectionClearance: AppConfiguration.TranslationPanel.selectionClearance,
+                context: .quickTranslate
+            )
+        }
+        var maximumHeight = visible.height - AppConfiguration.TranslationPanel.screenMargin
+        if !isInputMode, let quickTranslationTailEdge {
+            maximumHeight = min(
+                maximumHeight,
+                TranslationPopupGeometry.maximumPopupHeight(
+                    anchor: anchor,
+                    mainDisplayHeight: mainHeight,
+                    visibleFrame: visibleBounds,
+                    selectionClearance: AppConfiguration.TranslationPanel.selectionClearance,
+                    context: .quickTranslate,
+                    tailEdge: quickTranslationTailEdge
+                )
+            )
+        }
         let minimumHeight = isInputMode
             ? AppConfiguration.TranslationPanel.minimumInputHeight
             : AppConfiguration.TranslationPanel.minimumHeight
@@ -653,16 +724,22 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         let placement = TranslationPopupGeometry.placement(
             anchor: anchor,
             mainDisplayHeight: mainHeight,
-            visibleFrame: CaptureBounds(
-                x: visible.minX, y: visible.minY,
-                width: visible.width, height: visible.height
-            ),
+            visibleFrame: visibleBounds,
             popupWidth: width,
             popupHeight: height,
-            tailInset: AppConfiguration.TranslationPanel.tailInset
+            tailInset: AppConfiguration.TranslationPanel.tailInset,
+            selectionClearance: AppConfiguration.TranslationPanel.selectionClearance,
+            context: isInputMode ? .menuBarInput : .quickTranslate,
+            preferredTailEdge: isInputMode ? nil : quickTranslationTailEdge
         )
         panel.setFrameOrigin(NSPoint(x: placement.origin.x, y: placement.origin.y))
-        updateBubbleMask(side: placement.tailSide, width: width, height: height)
+        updateTailLayout(placement.tailEdge)
+        updateBubbleMask(
+            centerX: placement.tailX,
+            width: width,
+            height: height,
+            tailEdge: placement.tailEdge
+        )
         panel.invalidateShadow()
         panel.orderFrontRegardless()
         if isInputMode {
@@ -719,31 +796,64 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         )
     }
 
-    private func updateBubbleMask(side: TranslationPopupTailSide, width: CGFloat, height: CGFloat) {
+    private func updateTailLayout(_ tailEdge: TranslationPopupTailEdge) {
         let tailHeight = AppConfiguration.TranslationPanel.tailHeight
-        let top = max(1, height - tailHeight)
-        let radius = min(AppConfiguration.TranslationPanel.cornerRadius, top / 2)
+        switch tailEdge {
+        case .top:
+            scrollTopConstraint.constant = tailHeight
+            scrollBottomConstraint.constant = 0
+        case .bottom:
+            scrollTopConstraint.constant = 0
+            scrollBottomConstraint.constant = -tailHeight
+        }
+        effect.layoutSubtreeIfNeeded()
+    }
+
+    private func updateBubbleMask(
+        centerX: CGFloat,
+        width: CGFloat,
+        height: CGFloat,
+        tailEdge: TranslationPopupTailEdge
+    ) {
+        let tailHeight = AppConfiguration.TranslationPanel.tailHeight
+        let bodyHeight = max(1, height - tailHeight)
+        let radius = min(AppConfiguration.TranslationPanel.cornerRadius, bodyHeight / 2)
         let path = CGMutablePath()
-        let centerX = side == .left
-            ? AppConfiguration.TranslationPanel.tailInset
-            : width - AppConfiguration.TranslationPanel.tailInset
         let halfTail = AppConfiguration.TranslationPanel.tailHalfWidth
 
-        path.move(to: CGPoint(x: radius, y: 0))
-        path.addLine(to: CGPoint(x: width - radius, y: 0))
-        path.addQuadCurve(to: CGPoint(x: width, y: radius), control: CGPoint(x: width, y: 0))
-        path.addLine(to: CGPoint(x: width, y: top - radius))
-        path.addQuadCurve(
-            to: CGPoint(x: width - radius, y: top),
-            control: CGPoint(x: width, y: top)
-        )
-        path.addLine(to: CGPoint(x: centerX + halfTail, y: top))
-        path.addLine(to: CGPoint(x: centerX, y: height))
-        path.addLine(to: CGPoint(x: centerX - halfTail, y: top))
-        path.addLine(to: CGPoint(x: radius, y: top))
-        path.addQuadCurve(to: CGPoint(x: 0, y: top - radius), control: CGPoint(x: 0, y: top))
-        path.addLine(to: CGPoint(x: 0, y: radius))
-        path.addQuadCurve(to: CGPoint(x: radius, y: 0), control: CGPoint(x: 0, y: 0))
+        switch tailEdge {
+        case .top:
+            let top = bodyHeight
+            path.move(to: CGPoint(x: radius, y: 0))
+            path.addLine(to: CGPoint(x: width - radius, y: 0))
+            path.addQuadCurve(to: CGPoint(x: width, y: radius), control: CGPoint(x: width, y: 0))
+            path.addLine(to: CGPoint(x: width, y: top - radius))
+            path.addQuadCurve(to: CGPoint(x: width - radius, y: top), control: CGPoint(x: width, y: top))
+            path.addLine(to: CGPoint(x: centerX + halfTail, y: top))
+            path.addLine(to: CGPoint(x: centerX, y: height))
+            path.addLine(to: CGPoint(x: centerX - halfTail, y: top))
+            path.addLine(to: CGPoint(x: radius, y: top))
+            path.addQuadCurve(to: CGPoint(x: 0, y: top - radius), control: CGPoint(x: 0, y: top))
+            path.addLine(to: CGPoint(x: 0, y: radius))
+            path.addQuadCurve(to: CGPoint(x: radius, y: 0), control: CGPoint(x: 0, y: 0))
+        case .bottom:
+            let bottom = tailHeight
+            path.move(to: CGPoint(x: radius, y: bottom))
+            path.addLine(to: CGPoint(x: centerX - halfTail, y: bottom))
+            path.addLine(to: CGPoint(x: centerX, y: 0))
+            path.addLine(to: CGPoint(x: centerX + halfTail, y: bottom))
+            path.addLine(to: CGPoint(x: width - radius, y: bottom))
+            path.addQuadCurve(
+                to: CGPoint(x: width, y: bottom + radius),
+                control: CGPoint(x: width, y: bottom)
+            )
+            path.addLine(to: CGPoint(x: width, y: height - radius))
+            path.addQuadCurve(to: CGPoint(x: width - radius, y: height), control: CGPoint(x: width, y: height))
+            path.addLine(to: CGPoint(x: radius, y: height))
+            path.addQuadCurve(to: CGPoint(x: 0, y: height - radius), control: CGPoint(x: 0, y: height))
+            path.addLine(to: CGPoint(x: 0, y: bottom + radius))
+            path.addQuadCurve(to: CGPoint(x: radius, y: bottom), control: CGPoint(x: 0, y: bottom))
+        }
         path.closeSubpath()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -778,7 +888,8 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
 
     private func dismissIfOutside(_ point: CapturePoint) {
         guard panel.isVisible,
-              !panel.frame.contains(NSPoint(x: point.x, y: point.y))
+              !panel.frame.contains(NSPoint(x: point.x, y: point.y)),
+              !shouldIgnoreOutsideClick(point)
         else { return }
         dismiss()
     }
@@ -808,6 +919,16 @@ final class TranslationPanelController: NSObject, NSTextFieldDelegate {
         guard let sourceSpeech else { return }
         animateAudioFeedback(sender)
         onSpeak(sourceSpeech)
+    }
+
+    @objc private func pronunciationSpeechClicked(_ sender: NSButton) {
+        guard let sourceSpeech else { return }
+        animateAudioFeedback(sender)
+        onSpeak(TranslationSpeechContent(
+            text: sourceSpeech.text,
+            language: .english,
+            voiceCode: "en-US"
+        ))
     }
 
     private func animateAudioFeedback(_ button: NSButton) {

@@ -78,3 +78,31 @@ func launchAtLoginState() {
     #expect(!state.launchAtLoginEnabled)
     #expect(state.launchAtLoginError == AppText.Settings.startupError)
 }
+
+@Test("Translation language readiness can refresh without changing other settings")
+func translationLanguageReadiness() {
+    var state = SettingsState(
+        accessibilityGranted: true,
+        shortcutDisplay: "⌃⌥T",
+        showSelectionIcon: false
+    )
+    #expect(!state.translationLanguagesReady)
+    state.updateTranslationLanguagesReady(true)
+    #expect(state.translationLanguagesReady)
+    #expect(state.shortcutDisplay == "⌃⌥T")
+    #expect(state.accessibilityGranted)
+}
+
+@Test("Translation language preparation clears after models become ready")
+func translationLanguagePreparation() {
+    var state = SettingsState(
+        accessibilityGranted: false,
+        shortcutDisplay: "⌃⌥T",
+        showSelectionIcon: false
+    )
+    state.updateTranslationLanguagePreparation(isPreparing: true)
+    #expect(state.isPreparingTranslationLanguages)
+    state.updateTranslationLanguagesReady(true)
+    #expect(!state.isPreparingTranslationLanguages)
+    #expect(state.translationLanguagesError == nil)
+}

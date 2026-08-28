@@ -14,6 +14,9 @@ public enum SelectionIconSettingsStatus: Equatable, Sendable {
 
 public struct SettingsState: Equatable, Sendable {
     public private(set) var accessibilityGranted: Bool
+    public private(set) var translationLanguagesReady: Bool
+    public private(set) var isPreparingTranslationLanguages: Bool
+    public private(set) var translationLanguagesError: String?
     public private(set) var shortcutDisplay: String
     public private(set) var shortcutError: String?
     public private(set) var showSelectionIcon: Bool
@@ -23,6 +26,9 @@ public struct SettingsState: Equatable, Sendable {
 
     public init(
         accessibilityGranted: Bool,
+        translationLanguagesReady: Bool = false,
+        isPreparingTranslationLanguages: Bool = false,
+        translationLanguagesError: String? = nil,
         shortcutDisplay: String,
         shortcutError: String? = nil,
         showSelectionIcon: Bool,
@@ -31,6 +37,9 @@ public struct SettingsState: Equatable, Sendable {
         launchAtLoginError: String? = nil
     ) {
         self.accessibilityGranted = accessibilityGranted
+        self.translationLanguagesReady = translationLanguagesReady
+        self.isPreparingTranslationLanguages = isPreparingTranslationLanguages
+        self.translationLanguagesError = translationLanguagesError
         self.shortcutDisplay = shortcutDisplay
         self.shortcutError = shortcutError
         self.showSelectionIcon = showSelectionIcon
@@ -54,6 +63,22 @@ public struct SettingsState: Equatable, Sendable {
     public mutating func updateShortcut(display: String, error: String? = nil) {
         shortcutDisplay = display
         shortcutError = error
+    }
+
+    public mutating func updateTranslationLanguagesReady(_ isReady: Bool) {
+        translationLanguagesReady = isReady
+        if isReady {
+            isPreparingTranslationLanguages = false
+            translationLanguagesError = nil
+        }
+    }
+
+    public mutating func updateTranslationLanguagePreparation(
+        isPreparing: Bool,
+        error: String? = nil
+    ) {
+        isPreparingTranslationLanguages = isPreparing
+        translationLanguagesError = error
     }
 
     public mutating func setShowSelectionIcon(

@@ -47,3 +47,15 @@ func statusMenuSupportsVietnamese() {
         StatusMenuItemModel(title: "Thoát DichThat", action: .quit),
     ])
 }
+
+@Test("Missing translation models keep only Settings and Quit available")
+func missingTranslationModelsLockStatusMenu() {
+    #expect(StatusMenuModel.items(
+        accessibilityGranted: false,
+        translationLanguagesReady: false,
+        language: .english
+    ) == [
+        StatusMenuItemModel(title: "Settings…", action: .settings),
+        StatusMenuItemModel(title: "Quit DichThat", action: .quit),
+    ])
+}

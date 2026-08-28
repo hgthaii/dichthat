@@ -3,8 +3,12 @@ import Foundation
 
 struct TranslationEngine: Sendable {
     private let router = NaturalLanguageRouter()
-    private let provider = GoogleWebTranslationProvider()
-    private let dictionaryProvider = EnglishDictionaryProvider()
+    private let provider: AppleTranslationProvider
+    private let dictionaryProvider = OfflineDictionaryProvider()
+
+    init(provider: AppleTranslationProvider) {
+        self.provider = provider
+    }
 
     func translate(text: String) async -> Result<TranslationOutput, TranslationFailure> {
         if Task.isCancelled { return .failure(.cancelled) }
@@ -21,51 +25,35 @@ struct TranslationEngine: Sendable {
             route: route,
             mode: mode
         )
-        let primaryResult = await provider.translate(route: route, mode: mode)
+        let primaryResult = await provider.translate(route: route)
         guard case let .success(primary) = primaryResult else { return primaryResult }
         if Task.isCancelled { return .failure(.cancelled) }
         let dictionary = await dictionaryLookup
-        guard mode == .dictionary, let baseEnrichment = primary.enrichment else {
+        if Task.isCancelled { return .failure(.cancelled) }
+        guard mode == .dictionary, let dictionary else {
             return .success(primary)
         }
-        let enrichment = baseEnrichment.merging(englishDictionary: dictionary)
-        let enrichedPrimary = TranslationOutput(
-            sourceText: primary.sourceText,
-            text: primary.text,
-            source: primary.source,
-            target: primary.target,
-            enrichment: enrichment
+        let englishEnrichment = TranslationEnrichment(
+            phonetic: dictionary.phoneticDisplay,
+            pronunciations: dictionary.pronunciations,
+            groups: dictionary.meanings.map { meaning in
+                TranslationMeaningGroup(
+                    partOfSpeech: meaning.partOfSpeech,
+                    translations: [],
+                    definition: meaning.definition,
+                    example: meaning.example,
+                    synonyms: meaning.synonyms
+                )
+            }
         )
-
-        let snippets = TranslationContextBatchBuilder.snippets(from: enrichment)
-        var nonceGenerator = SystemRandomNumberGenerator()
-        var nonceCandidates: [String] = []
-        nonceCandidates.reserveCapacity(3)
-        for _ in 0 ..< 3 {
-            nonceCandidates.append(TranslationMarkerNonce.generate(using: &nonceGenerator))
-        }
-        guard let batch = TranslationContextBatchBuilder.make(
-            snippets: snippets,
-            nonceCandidates: nonceCandidates
-        ) else { return .success(enrichedPrimary) }
-
-        let localizedResult = await provider.localize(batch: batch)
+        let enrichment = await localized(enrichment: englishEnrichment)
         if Task.isCancelled { return .failure(.cancelled) }
-        guard case let .success(localized) = localizedResult,
-              let localizedEnrichment = TranslationContextBatchParser.apply(
-                localized: localized,
-                batch: batch,
-                to: enrichment
-              )
-        else {
-            return .success(enrichedPrimary)
-        }
         return .success(TranslationOutput(
             sourceText: primary.sourceText,
             text: primary.text,
             source: primary.source,
             target: primary.target,
-            enrichment: localizedEnrichment
+            enrichment: enrichment
         ))
     }
 
@@ -74,6 +62,33 @@ struct TranslationEngine: Sendable {
         mode: TranslationMode
     ) async -> EnglishDictionaryEnrichment? {
         guard mode == .dictionary, route.source == .english else { return nil }
-        return await dictionaryProvider.lookup(word: route.text)
+        return dictionaryProvider.lookup(word: route.text)
+    }
+
+    private func localized(enrichment: TranslationEnrichment) async -> TranslationEnrichment {
+        let snippets = TranslationContextBatchBuilder.snippets(from: enrichment)
+        guard !snippets.isEmpty else { return enrichment }
+        let texts = snippets.map(\.text)
+        guard case let .success(values) = await provider.translate(
+            texts: texts,
+            source: .english,
+            target: .vietnamese
+        ), values.count == snippets.count else { return enrichment }
+
+        var groups = enrichment.groups
+        for (snippet, value) in zip(snippets, values) where groups.indices.contains(snippet.groupIndex) {
+            let group = groups[snippet.groupIndex]
+            switch snippet.kind {
+            case .definition:
+                groups[snippet.groupIndex] = group.replacing(definition: value, example: nil)
+            case .example:
+                groups[snippet.groupIndex] = group.replacing(definition: nil, example: value)
+            }
+        }
+        return TranslationEnrichment(
+            phonetic: enrichment.phonetic,
+            pronunciations: enrichment.pronunciations,
+            groups: groups
+        )
     }
 }

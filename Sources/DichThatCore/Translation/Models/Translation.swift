@@ -58,10 +58,12 @@ public struct TranslationOutput: Equatable, Sendable {
 public struct TranslationSpeechContent: Equatable, Sendable {
     public let text: String
     public let language: SupportedLanguage
+    public let voiceCode: String?
 
-    public init(text: String, language: SupportedLanguage) {
+    public init(text: String, language: SupportedLanguage, voiceCode: String? = nil) {
         self.text = text
         self.language = language
+        self.voiceCode = voiceCode
     }
 }
 
@@ -71,9 +73,7 @@ public enum TranslationFailure: Error, Equatable, Sendable {
     case unsupportedLanguage
     case ambiguousLanguage
     case cancelled
-    case timedOut
-    case networkUnavailable
-    case httpStatus(Int)
+    case translationUnavailable
     case malformedResponse
     case emptyTranslation
     case unsupportedResponseLanguage(String)

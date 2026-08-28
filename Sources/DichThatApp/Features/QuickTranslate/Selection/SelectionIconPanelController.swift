@@ -43,25 +43,11 @@ final class SelectionIconPanelController {
     }
 
     func show(presentation: SelectionIconPresentation) {
-        let mainHeight = NSScreen.screens.first?.frame.height ?? 0
-        let referencePoint: NSPoint
-        switch presentation.anchor {
-        case let .bounds(bounds):
-            let converted = SelectionIconGeometry.appKitBounds(
-                fromQuartz: bounds,
-                mainDisplayHeight: mainHeight
-            )
-            referencePoint = NSPoint(
-                x: converted.x + converted.width,
-                y: converted.y + converted.height / 2
-            )
-        case let .mouse(point):
-            referencePoint = NSPoint(x: point.x, y: point.y)
+        guard let resolution = ScreenGeometryResolver.resolve(anchor: presentation.anchor) else {
+            return
         }
-        let screen = NSScreen.screens.first(where: { $0.frame.contains(referencePoint) })
-            ?? NSScreen.main
-            ?? NSScreen.screens.first
-        guard let screen else { return }
+        let screen = resolution.screen
+        let mainHeight = resolution.mainDisplayHeight
         let visible = screen.visibleFrame
         let origin = SelectionIconGeometry.iconOrigin(
             anchor: presentation.anchor,

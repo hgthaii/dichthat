@@ -6,7 +6,7 @@ DichThat is a native macOS menu-bar app for fast English ↔ Vietnamese translat
 
 - Language: Swift 6
 - UI: AppKit
-- Minimum system: macOS 13
+- Minimum system: macOS 26
 - Package targets: `DichThatCore` and `DichThatApp`
 - Product name: `DichThat`
 - Bundle ID: `dev.hgthaii.dichthat`

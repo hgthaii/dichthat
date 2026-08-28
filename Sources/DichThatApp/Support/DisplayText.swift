@@ -52,9 +52,7 @@ extension TranslationFailure {
         case .unsupportedLanguage: return AppText.Errors.supportedLanguages
         case .ambiguousLanguage: return AppText.Errors.ambiguousLanguage
         case .cancelled: return AppText.Errors.cancelled
-        case .timedOut: return AppText.Errors.timedOut
-        case .networkUnavailable: return AppText.Errors.serviceUnavailable
-        case let .httpStatus(status): return AppText.Errors.serviceError(status: status)
+        case .translationUnavailable: return AppText.Errors.translationUnavailable
         case .malformedResponse, .emptyTranslation: return AppText.Errors.invalidResponse
         case .unsupportedResponseLanguage: return AppText.Errors.unsupportedResponseLanguage
         case .sourceLanguageMismatch: return AppText.Errors.sourceLanguageChanged

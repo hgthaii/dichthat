@@ -21,7 +21,14 @@ final class SelectionCaptureService {
         switch accessibilityResult {
         case let .completed(output, capturedBounds):
             if let output {
-                return .success(output)
+                return .success(SelectionCaptureOutput(
+                    text: output.text,
+                    method: output.method,
+                    anchor: SelectionAnchorResolver.resolve(
+                        captured: output.anchor,
+                        observed: capturedBounds.map(SelectionAnchor.bounds)
+                    )
+                ))
             }
             selectionBounds = capturedBounds
         case .busy, .timedOut:

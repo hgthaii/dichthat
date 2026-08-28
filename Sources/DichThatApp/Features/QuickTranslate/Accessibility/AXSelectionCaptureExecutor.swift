@@ -52,7 +52,17 @@ final class AXSelectionCaptureExecutor: @unchecked Sendable {
                     frontmostPID: frontmostPID,
                     mouseAnchor: mouseAnchor
                 )
-                let selectionBounds = output == nil
+                // Some apps expose the selected text on the focused element but
+                // expose its range bounds only on a descendant AX element. Do not
+                // accept the cursor fallback until that second lookup has run.
+                let needsSelectionBounds: Bool
+                switch output?.anchor {
+                case .bounds:
+                    needsSelectionBounds = false
+                case .mouse, nil:
+                    needsSelectionBounds = true
+                }
+                let selectionBounds = needsSelectionBounds
                     ? capture.selectionBounds(frontmostPID: frontmostPID)
                     : nil
                 finishCapture()

@@ -11,7 +11,7 @@ guard singleInstanceLock != nil else {
         withBundleIdentifier: AppIdentity.bundleIdentifier
     )
     .first { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }?
-    .activate(options: [.activateIgnoringOtherApps])
+    .activate(options: [])
     exit(EXIT_SUCCESS)
 }
 
