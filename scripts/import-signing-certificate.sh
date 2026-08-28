@@ -27,12 +27,18 @@ umask 077
 
 printf '%s\n' "Decoding and verifying the release certificate…"
 printf '%s' "${certificate_base64}" | /usr/bin/base64 -D > "${certificate_path}"
-openssl pkcs12 \
-    -in "${certificate_path}" \
-    -clcerts \
-    -nokeys \
-    -passin "pass:${certificate_password}" \
+pkcs12_arguments=(
+    -in "${certificate_path}"
+    -clcerts
+    -nokeys
+    -passin "pass:${certificate_password}"
     -out "${public_certificate_path}"
+)
+if openssl version | grep -Eq '^OpenSSL 3([.[:space:]]|$)'; then
+    # Existing release secrets may have been exported with LibreSSL's RC2 default.
+    pkcs12_arguments=(-legacy "${pkcs12_arguments[@]}")
+fi
+openssl pkcs12 "${pkcs12_arguments[@]}"
 actual_fingerprint="$(
     openssl x509 -in "${public_certificate_path}" -noout -fingerprint -sha256
 )"
