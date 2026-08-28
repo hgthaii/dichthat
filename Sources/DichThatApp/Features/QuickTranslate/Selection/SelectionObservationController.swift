@@ -181,7 +181,13 @@ final class SelectionObservationController {
         result: SelectionObservationResult
     ) {
         guard let presentation = state.complete(request: request, result: result) else { return }
-        lastObservedAnchor = presentation.anchor
+        // Keep the gesture endpoint for Quick Translate. Certain browser/web-view
+        // Accessibility implementations return selected-range bounds relative to
+        // their content area rather than the global display, which can incorrectly
+        // move the popup to x = 0 or onto another monitor. The mouse-up point is
+        // already in AppKit's global screen coordinates and remains attached to
+        // the selected text.
+        lastObservedAnchor = .mouse(presentation.context.mouseAnchor)
         lastObservedTargetPID = presentation.context.targetPID
         guard presentsSelectionIcon else { return }
         iconPanel.show(presentation: presentation)

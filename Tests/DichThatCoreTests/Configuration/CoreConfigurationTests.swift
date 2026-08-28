@@ -5,7 +5,6 @@ final class CoreConfigurationTests: XCTestCase {
     func testNumericProductTunablesRemainFrozen() {
         let integerCases: [(String, Int, Int)] = [
             ("maximum Unicode scalars", CoreConfiguration.LanguageRouting.maximumUnicodeScalars, 5_000),
-            ("maximum Google attempts", CoreConfiguration.GoogleTranslation.maximumAttempts, 1),
         ]
         for (name, actual, expected) in integerCases {
             XCTAssertEqual(actual, expected, name)
@@ -16,9 +15,7 @@ final class CoreConfigurationTests: XCTestCase {
             ("minimum confidence margin", CoreConfiguration.LanguageRouting.minimumConfidenceMargin, 0.15),
             ("rescue confidence", CoreConfiguration.LanguageRouting.rescueConfidence, 0.90),
             ("rescue confidence margin", CoreConfiguration.LanguageRouting.rescueConfidenceMargin, 0.80),
-            ("Google timeout", CoreConfiguration.GoogleTranslation.timeout, 5),
             ("minimum drag distance", CoreConfiguration.SelectionObservation.minimumDragDistance, 4),
-            ("dictionary timeout", CoreConfiguration.EnglishDictionary.timeout, 5),
         ]
         for (name, actual, expected) in floatingPointCases {
             XCTAssertEqual(actual, expected, accuracy: 0.000_001, name)
@@ -33,19 +30,9 @@ final class CoreConfigurationTests: XCTestCase {
                 "globalKeyboardShortcut"
             ),
             (
-                "Google endpoint",
-                CoreConfiguration.GoogleTranslation.endpoint.absoluteString,
-                "https://translate.googleapis.com/translate_a/single"
-            ),
-            (
                 "selection icon preference key",
                 CoreConfiguration.PreferenceKeys.showSelectionIcon,
                 "showSelectionIconWhenTextIsSelected"
-            ),
-            (
-                "dictionary endpoint",
-                CoreConfiguration.EnglishDictionary.endpoint.absoluteString,
-                "https://api.dictionaryapi.dev/api/v2/entries/en"
             ),
         ]
         for (name, actual, expected) in cases {
@@ -57,10 +44,6 @@ final class CoreConfigurationTests: XCTestCase {
         XCTAssertEqual(
             LanguageRoutingPolicy.maximumUnicodeScalars,
             CoreConfiguration.LanguageRouting.maximumUnicodeScalars
-        )
-        XCTAssertEqual(
-            GoogleTranslationRequestBuilder.endpoint,
-            CoreConfiguration.GoogleTranslation.endpoint
         )
         XCTAssertEqual(
             ShortcutPreferences.storageKey,

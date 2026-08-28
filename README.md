@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/macOS-13%2B-000000?logo=apple&logoColor=white" alt="macOS 13+">
+  <img src="https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white" alt="macOS 26+">
   <img src="https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white" alt="Swift 6.0">
   <img src="https://img.shields.io/badge/translation-VI%20%E2%86%94%20EN-34C759" alt="Vietnamese and English">
   <img src="https://img.shields.io/github/v/release/hgthaii/dichthat?display_name=tag&sort=semver" alt="Latest release">
@@ -26,7 +26,7 @@
 DichThat là ứng dụng nhỏ nằm trên menu bar của macOS. Bạn chỉ cần chọn một đoạn chữ, nhấn phím tắt và xem bản dịch ngay bên cạnh — không cần chuyển sang ứng dụng khác.
 
 Ứng dụng tự nhận biết tiếng Anh hoặc tiếng Việt và dịch sang ngôn ngữ còn lại.
-Bản phát hành hỗ trợ cả máy Mac Apple Silicon và Intel chạy macOS 13 trở lên.
+Bản phát hành hỗ trợ cả máy Mac Apple Silicon và Intel chạy macOS 26 trở lên.
 
 ## Tính năng chính
 
@@ -43,8 +43,9 @@ Bản phát hành hỗ trợ cả máy Mac Apple Silicon và Intel chạy macOS 
 1. Mở file DMG, kéo DichThat vào **Applications**, rồi mở app tại đó.
 2. Nếu macOS chặn lần đầu, vào **Privacy & Security → Open Anyway**.
 3. Cấp quyền **Accessibility** theo hướng dẫn trong Settings.
-4. Chọn chữ tiếng Anh hoặc tiếng Việt và nhấn phím tắt mặc định `⌃⌥T`.
-5. Bản dịch sẽ xuất hiện cạnh đoạn chữ vừa chọn.
+4. Lần đầu mở app, tải tiếng Anh và tiếng Việt theo hướng dẫn trong Settings để bật tính năng dịch. Trước khi tải xong, app chỉ cho phép mở Settings hoặc thoát.
+5. Chọn chữ tiếng Anh hoặc tiếng Việt và nhấn phím tắt mặc định `⌃⌥T`.
+6. Bản dịch sẽ xuất hiện cạnh đoạn chữ vừa chọn.
 
 Bạn cũng có thể click icon DichThat trên menu bar rồi nhập nội dung cần dịch.
 
@@ -52,8 +53,11 @@ Bạn cũng có thể click icon DichThat trên menu bar rồi nhập nội dung
 
 - DichThat không lưu lịch sử dịch.
 - Ứng dụng không ghi lại nội dung bạn chọn hoặc clipboard.
-- Nội dung cần dịch được gửi đến dịch vụ dịch trực tuyến.
+- Nội dung cần dịch được Apple Translation xử lý ngay trên máy.
+- Nghĩa, ví dụ, từ đồng nghĩa và phiên âm US được tra từ bộ dữ liệu tích hợp sẵn; không gửi từ cần tra tới dịch vụ từ điển.
 - Báo lỗi chỉ kèm thông tin hệ thống cần thiết, không kèm nội dung bạn đã dịch.
+
+Nguồn dữ liệu từ điển: Open English WordNet 2025 và CMU Pronouncing Dictionary. Xem đầy đủ tại **Settings → About → Nguồn dữ liệu**.
 
 ## Báo lỗi
 
@@ -61,10 +65,11 @@ Mở **Settings → About → Report a Bug** để tạo báo lỗi có sẵn th
 
 ## Dành cho nhà phát triển
 
-Yêu cầu macOS 13 trở lên và Swift 6.
+Yêu cầu macOS 26 trở lên và Swift 6.
 
 ```bash
 swift test
+bash scripts/build-offline-dictionary.sh # chỉ cần khi cập nhật nguồn dữ liệu
 bash scripts/build-app.sh
 bash scripts/verify-app.sh
 bash scripts/build-dmg.sh

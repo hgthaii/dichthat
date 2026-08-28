@@ -40,6 +40,7 @@ build_architecture() {
     local architecture="$1"
     swift build \
         --package-path "${repository_root}" \
+        --disable-sandbox \
         --cache-path "${package_cache_path}" \
         --scratch-path "${scratch_path}" \
         --configuration release \
@@ -50,6 +51,7 @@ binary_path_for_architecture() {
     local architecture="$1"
     swift build \
         --package-path "${repository_root}" \
+        --disable-sandbox \
         --cache-path "${package_cache_path}" \
         --scratch-path "${scratch_path}" \
         --configuration release \
@@ -82,6 +84,12 @@ install -m 644 "${repository_root}/Resources/AppIconLight.png" "${app_path}/Cont
 install -m 644 "${repository_root}/Resources/BrandDT.png" "${app_path}/Contents/Resources/BrandDT.png"
 install -m 644 "${repository_root}/Resources/StatusItemTemplate.png" "${app_path}/Contents/Resources/StatusItemTemplate.png"
 install -m 644 "${installer_background_path}" "${app_path}/Contents/Resources/InstallerBackground.png"
+install -m 644 "${repository_root}/Resources/OfflineDictionary.sqlite" \
+    "${app_path}/Contents/Resources/OfflineDictionary.sqlite"
+if [[ -d "${repository_root}/Resources/ThirdPartyNotices" ]]; then
+    /usr/bin/ditto "${repository_root}/Resources/ThirdPartyNotices" \
+        "${app_path}/Contents/Resources/ThirdPartyNotices"
+fi
 /usr/bin/ditto \
     "${arm64_binary_path}/Sparkle.framework" \
     "${app_path}/Contents/Frameworks/Sparkle.framework"

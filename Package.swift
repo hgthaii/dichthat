@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "DichThat",
     platforms: [
-        .macOS(.v13),
+        .macOS("26.0"),
     ],
     products: [
         .library(name: "DichThatCore", targets: ["DichThatCore"]),
@@ -34,7 +34,14 @@ let package = Package(
                     "-Xfrontend",
                     "-disable-dynamic-actor-isolation",
                 ]),
-            ]
+            ],
+            linkerSettings: [.linkedLibrary("sqlite3")]
+        ),
+        .executableTarget(
+            name: "OfflineDictionaryBuilder",
+            dependencies: ["DichThatCore"],
+            path: "Tools/OfflineDictionaryBuilder",
+            linkerSettings: [.linkedLibrary("sqlite3")]
         ),
         .testTarget(
             name: "DichThatCoreTests",

@@ -24,3 +24,15 @@ func localizedBrandCopyIsStable() {
     )
     #expect(AppText.Settings.aboutDescription(language: .vietnamese) == "Dịch ngay. Hiểu thật.")
 }
+
+@Test("Apple Translation availability guidance is localized")
+func localizedAppleTranslationGuidanceIsStable() {
+    #expect(
+        AppText.Errors.translationUnavailable(language: .english)
+            == "Apple Translation is unavailable. Check that English and Vietnamese are installed in Translation Languages."
+    )
+    #expect(
+        AppText.Errors.translationUnavailable(language: .vietnamese)
+            == "Apple Translation chưa sẵn sàng. Hãy kiểm tra tiếng Anh và tiếng Việt đã được cài trong Ngôn ngữ dịch."
+    )
+}

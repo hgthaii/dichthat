@@ -36,9 +36,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var translationReuseCache = TranslationReuseCache()
     private var translationTask: Task<Void, Never>?
     private var permissionRefreshTask: Task<Void, Never>?
+    private var translationAvailabilityTask: Task<Void, Never>?
+    private var translationPreparationTask: Task<Void, Never>?
+    private var translationOnboardingPending = true
     private var lastKnownAccessibilityTrust = false
     private var isSettingsPresented = false
     private let translationSpeech = TranslationSpeechController()
+    private let appleTranslationProvider = AppleTranslationProvider()
+    private lazy var translationEngine = TranslationEngine(provider: appleTranslationProvider)
     private var isTerminating = false
     private var currentShortcut = KeyboardShortcut.defaultShortcut
     private var settingsState = SettingsState(
@@ -71,6 +76,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         },
         onSpeak: { [weak self] content in
             self?.speakSource(content)
+        },
+        shouldIgnoreOutsideClick: { [weak self] point in
+            self?.statusButtonFrameContains(point) ?? false
         }
     )
 
@@ -119,11 +127,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if !accessibilityGranted {
             startPermissionRefreshPolling()
         }
+        refreshTranslationLanguageAvailability(presentOnboardingIfMissing: true)
         settingsController?.refresh(state: settingsState)
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
         refreshPermissionAndObservation()
+        refreshTranslationLanguageAvailability()
         if !AXIsProcessTrusted() {
             startPermissionRefreshPolling()
         }
@@ -169,6 +179,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         isTerminating = true
         permissionRefreshTask?.cancel()
+        translationAvailabilityTask?.cancel()
+        cancelTranslationLanguagePreparation()
         cancelTranslation(hidePanel: true)
         selectionObservation.stop()
         shortcutRegistrar.unregister()
@@ -177,6 +189,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         isTerminating = true
         permissionRefreshTask?.cancel()
+        translationAvailabilityTask?.cancel()
+        cancelTranslationLanguagePreparation()
         captureTask?.cancel()
         captureTask = nil
         captureContext = nil
@@ -189,6 +203,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func quit() {
+        statusMenu.cancelTracking()
+        cancelTranslationLanguagePreparation()
         NSApplication.shared.terminate(nil)
     }
 
@@ -205,7 +221,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             )
             statusMenu.popUp(
                 positioning: nil,
-                at: NSPoint(x: 0, y: sender.bounds.height + 3),
+                at: NSPoint(x: 0, y: 0),
                 in: sender
             )
             return
@@ -213,6 +229,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let anchor = statusButtonAnchor(sender)
         if translationPanel.isVisible {
             dismissTranslation()
+            return
+        }
+        guard settingsState.translationLanguagesReady else {
             return
         }
         cancelTranslation(hidePanel: true)
@@ -227,10 +246,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func presentSettings(showAbout: Bool) {
         refreshPermissionAndObservation()
+        refreshTranslationLanguageAvailability()
         if settingsController == nil {
             settingsController = SettingsWindowController(
                 onGrantPermission: { [weak self] in
                     self?.requestAccessibilityPermission()
+                },
+                onPrepareTranslationLanguages: { [weak self] in
+                    self?.prepareTranslationLanguages()
                 },
                 appVersion: AppMetadata.version,
                 onCommitShortcut: { [weak self] candidate in
@@ -253,6 +276,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             )
         }
+        if let hostView = settingsController?.translationPreparationHostView {
+            appleTranslationProvider.attachBridge(to: hostView)
+        }
         isSettingsPresented = true
         settingsController?.present(
             state: settingsState,
@@ -269,9 +295,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func settingsDidDismiss() {
         guard isSettingsPresented else { return }
         isSettingsPresented = false
+        cancelTranslationLanguagePreparation()
     }
 
     private func acceptShortcut(_ candidate: KeyboardShortcut) -> String? {
+        guard settingsState.translationLanguagesReady else { return nil }
         switch shortcutConfiguration.accept(candidate, handler: shortcutHandler) {
         case let .success(shortcut):
             currentShortcut = shortcut
@@ -289,6 +317,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func shortcutDidFire() {
+        guard settingsState.translationLanguagesReady else {
+            return
+        }
         let application = NSWorkspace.shared.frontmostApplication
         let mouseLocation = NSEvent.mouseLocation
         let ownPID = ProcessInfo.processInfo.processIdentifier
@@ -395,7 +426,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             translationPanel.show(
                 output: cached,
                 anchor: output.anchor,
-                sourceVoiceAvailable: translationSpeech.isVoiceAvailable(for: cached.source)
+                availableVoiceCodes: translationSpeech.availableVoiceCodes(for: cached.source)
             )
             return
         }
@@ -404,8 +435,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let text = output.text
         translationPanel.showLoading(anchor: anchor)
         translationTask = Task.detached(priority: .userInitiated) { [weak self] in
-            let result = await TranslationEngine().translate(text: text)
             guard let self else { return }
+            let result = await self.translationEngine.translate(text: text)
             await self.finishTranslation(requestID: requestID, anchor: anchor, result: result)
         }
     }
@@ -426,13 +457,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         translationTask = nil
         switch result {
         case let .success(output):
+            refreshTranslationLanguageAvailability()
             translationReuseCache.store(output)
             translationPanel.show(
                 output: output,
                 anchor: anchor,
-                sourceVoiceAvailable: translationSpeech.isVoiceAvailable(for: output.source)
+                availableVoiceCodes: translationSpeech.availableVoiceCodes(for: output.source)
             )
         case let .failure(error):
+            if error == .translationUnavailable {
+                settingsState.updateTranslationLanguagesReady(false)
+                refreshTranslationLanguageAvailability(presentOnboardingIfMissing: true)
+            }
             translationPanel.showFailure(error.displayText, anchor: anchor)
         }
     }
@@ -478,12 +514,79 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 accessibilityGranted: isTrusted
             )
         )
-        rebuildStatusMenu(accessibilityGranted: isTrusted)
+        rebuildStatusMenu(
+            accessibilityGranted: isTrusted,
+            translationLanguagesReady: settingsState.translationLanguagesReady
+        )
         if permissionWasJustGranted {
             reactivateAccessibilityIntegrations()
         } else {
             applySelectionObservationEffect(effect)
         }
+        settingsController?.refresh(state: settingsState)
+    }
+
+    private func refreshTranslationLanguageAvailability(
+        presentOnboardingIfMissing: Bool = false
+    ) {
+        if presentOnboardingIfMissing {
+            translationOnboardingPending = true
+        }
+        translationAvailabilityTask?.cancel()
+        translationAvailabilityTask = Task { [weak self] in
+            guard let self else { return }
+            let isReady = await appleTranslationProvider.languagesAreReady()
+            guard !Task.isCancelled, !isTerminating else { return }
+            settingsState.updateTranslationLanguagesReady(isReady)
+            rebuildStatusMenu(
+                accessibilityGranted: lastKnownAccessibilityTrust,
+                translationLanguagesReady: isReady
+            )
+            settingsController?.refresh(state: settingsState)
+            translationAvailabilityTask = nil
+            if isReady {
+                translationOnboardingPending = false
+            } else if translationOnboardingPending {
+                translationOnboardingPending = false
+                presentSettings(showAbout: false)
+            }
+        }
+    }
+
+    private func prepareTranslationLanguages() {
+        guard !settingsState.translationLanguagesReady,
+              translationPreparationTask == nil
+        else { return }
+        settingsState.updateTranslationLanguagePreparation(isPreparing: true)
+        settingsController?.refresh(state: settingsState)
+        translationPreparationTask = Task { [weak self] in
+            guard let self else { return }
+            let result = await appleTranslationProvider.prepareLanguages()
+            guard !Task.isCancelled, !isTerminating else { return }
+            translationPreparationTask = nil
+            switch result {
+            case .success:
+                settingsState.updateTranslationLanguagesReady(true)
+                rebuildStatusMenu(
+                    accessibilityGranted: lastKnownAccessibilityTrust,
+                    translationLanguagesReady: true
+                )
+            case .failure:
+                settingsState.updateTranslationLanguagePreparation(
+                    isPreparing: false,
+                    error: AppText.Settings.translationLanguageDownloadFailed
+                )
+            }
+            settingsController?.refresh(state: settingsState)
+        }
+    }
+
+    private func cancelTranslationLanguagePreparation() {
+        translationPreparationTask?.cancel()
+        translationPreparationTask = nil
+        appleTranslationProvider.cancelLanguagePreparation()
+        guard !settingsState.translationLanguagesReady else { return }
+        settingsState.updateTranslationLanguagePreparation(isPreparing: false)
         settingsController?.refresh(state: settingsState)
     }
 
@@ -501,9 +604,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         startPermissionRefreshPolling()
     }
 
-    private func rebuildStatusMenu(accessibilityGranted: Bool) {
+    private func rebuildStatusMenu(
+        accessibilityGranted: Bool,
+        translationLanguagesReady: Bool
+    ) {
         statusMenu.removeAllItems()
-        let models = StatusMenuModel.items(accessibilityGranted: accessibilityGranted)
+        let models = StatusMenuModel.items(
+            accessibilityGranted: accessibilityGranted,
+            translationLanguagesReady: translationLanguagesReady
+        )
         for (index, model) in models.enumerated() {
             if index > 0 {
                 statusMenu.addItem(.separator())
@@ -540,6 +649,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return .mouse(CapturePoint(x: screenRect.midX, y: screenRect.minY))
     }
 
+    private func statusButtonFrameContains(_ point: CapturePoint) -> Bool {
+        guard let button = statusItem?.button, let window = button.window else { return false }
+        let windowRect = button.convert(button.bounds, to: nil)
+        let screenRect = window.convertToScreen(windowRect)
+        return screenRect.contains(NSPoint(x: point.x, y: point.y))
+    }
+
     private func menuBarInputChanged(_ text: String, anchor: SelectionAnchor) {
         translationTask?.cancel()
         translationTask = nil
@@ -555,7 +671,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             translationPanel.show(
                 output: cached,
                 anchor: anchor,
-                sourceVoiceAvailable: translationSpeech.isVoiceAvailable(for: cached.source)
+                availableVoiceCodes: translationSpeech.availableVoiceCodes(for: cached.source)
             )
             return
         }
@@ -569,7 +685,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let self,
                   await self.showDebouncedLoading(requestID: requestID, anchor: anchor)
             else { return }
-            let result = await TranslationEngine().translate(text: normalized)
+            let result = await self.translationEngine.translate(text: normalized)
             guard !Task.isCancelled else { return }
             await self.finishTranslation(requestID: requestID, anchor: anchor, result: result)
         }

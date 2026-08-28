@@ -6,6 +6,8 @@ enum SettingsAppearance {
     static let active = adaptiveColor(darkWhite: 0.72, lightWhite: 0.38)
     static let border = adaptiveColor(darkWhite: 0.145, lightWhite: 0.78)
     static let divider = adaptiveColor(darkWhite: 0.105, lightWhite: 0.84)
+    static let updateCardBackground = adaptiveColor(darkWhite: 0.12, lightWhite: 0.96)
+    static let updateCardBorder = adaptiveColor(darkWhite: 0.22, lightWhite: 0.82)
 
     static func resolved(_ color: NSColor, for appearance: NSAppearance) -> CGColor {
         var result = color.cgColor

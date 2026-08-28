@@ -10,12 +10,19 @@ final class TranslationSpeechController {
         AVSpeechSynthesisVoice(language: language.speechVoiceCode) != nil
     }
 
+    func availableVoiceCodes(for language: SupportedLanguage) -> Set<String> {
+        let code = language.speechVoiceCode
+        return AVSpeechSynthesisVoice(language: code) == nil ? [] : [code]
+    }
+
     @discardableResult
     func speak(
         _ content: TranslationSpeechContent,
         target: TranslationSpeechTarget
     ) -> Bool {
-        let voice = AVSpeechSynthesisVoice(language: content.language.speechVoiceCode)
+        let voice = AVSpeechSynthesisVoice(
+            language: content.voiceCode ?? content.language.speechVoiceCode
+        )
         let actions = state.request(
             target: target,
             content: content,

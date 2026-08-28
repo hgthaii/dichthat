@@ -55,6 +55,7 @@ enum AppConfiguration {
         static let tailHeight: CGFloat = 10
         static let tailHalfWidth: CGFloat = 8
         static let tailInset: CGFloat = 26
+        static let selectionClearance: CGFloat = 8
         static let contentSpacing: CGFloat = 8
         static let contentInset: CGFloat = 14
         static let contentWidthInsets: CGFloat = 28
@@ -72,6 +73,9 @@ enum AppConfiguration {
         static let sourceWordFontSize: CGFloat = 21
         static let sourceWordSpacing: CGFloat = 2
         static let phoneticFontSize: CGFloat = 12
+        static let accentLabelFontSize: CGFloat = 10
+        static let accentLabelWidth: CGFloat = 22
+        static let pronunciationRowSpacing: CGFloat = 5
         static let sourceRowSpacing: CGFloat = 7
         static let meaningFontSize: CGFloat = 13
         static let exampleFontSize: CGFloat = 12
@@ -86,6 +90,12 @@ enum AppConfiguration {
         static let badgeHorizontalInset: CGFloat = 7
         static let badgeCornerRadius: CGFloat = 6
         static let badgeMinimumHeight: CGFloat = 20
+        static let badgeBackgroundOpacity: CGFloat = 0.92
+        static let badgeBorderOpacity: CGFloat = 0.34
+        static let badgeBorderWidth: CGFloat = 0.5
+        static let badgeShadowOpacity: Float = 0.18
+        static let badgeShadowRadius: CGFloat = 3
+        static let badgeShadowOffset = CGSize(width: 0, height: -1)
         static let minimumWidth: CGFloat = 280
         static let maximumWidth: CGFloat = 400
         static let maximumHeight: CGFloat = 520
@@ -101,6 +111,7 @@ enum AppConfiguration {
         static let sectionSpacing: CGFloat = 18
         static let rowHeight: CGFloat = 64
         static let cardRadius: CGFloat = 10
+        static let cardBorderWidth: CGFloat = 1
         static let permissionHeight: CGFloat = 54
         static let shortcutHeight: CGFloat = 112
         static let tabWidth: CGFloat = 74
@@ -110,6 +121,7 @@ enum AppConfiguration {
         static let toggleHeight: CGFloat = 20
         static let toggleInset: CGFloat = 2
         static let aboutIconSize: CGFloat = 52
-        static let updateCardHeight: CGFloat = 64
+        static let updateCardWidth: CGFloat = 360
+        static let updateCardHeight: CGFloat = 52
     }
 }

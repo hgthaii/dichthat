@@ -43,6 +43,14 @@ final class ShortcutEditorView: NSView, NSTextFieldDelegate {
         isRefreshing = false
     }
 
+    func setControlsEnabled(_ isEnabled: Bool) {
+        for item in modifierButtons {
+            item.button.isEnabled = isEnabled
+        }
+        keyField.isEnabled = isEnabled
+        alphaValue = isEnabled ? 1 : 0.45
+    }
+
     private func configureContent() {
         let buttons = [controlButton, optionButton, commandButton, shiftButton]
         let tooltips = ["Control", "Option", "Command", "Shift"]

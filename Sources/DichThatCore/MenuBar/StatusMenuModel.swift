@@ -43,8 +43,21 @@ public enum StatusMenuModel {
 
     public static func items(
         accessibilityGranted: Bool,
+        translationLanguagesReady: Bool = true,
         language: AppLanguage = .current
     ) -> [StatusMenuItemModel] {
+        guard translationLanguagesReady else {
+            return [
+                StatusMenuItemModel(
+                    title: AppText.Menu.settings(language: language),
+                    action: .settings
+                ),
+                StatusMenuItemModel(
+                    title: "\(AppText.Menu.quitPrefix(language: language)) \(AppIdentity.productName)",
+                    action: .quit
+                ),
+            ]
+        }
         var result: [StatusMenuItemModel] = []
         if !accessibilityGranted {
             result.append(StatusMenuItemModel(

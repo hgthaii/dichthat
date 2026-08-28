@@ -1,7 +1,7 @@
 import AppKit
 
 /// A compact macOS-style toggle implemented without NSSwitch, whose runtime
-/// callbacks previously conflicted with the app's macOS 13 compatibility mode.
+/// callbacks previously conflicted with the app's compatibility mode.
 @MainActor
 final class AppToggleButton: NSButton {
     override init(frame frameRect: NSRect) {

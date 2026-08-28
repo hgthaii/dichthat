@@ -1,0 +1,18 @@
+DichThat offline language data
+================================
+
+Open English WordNet 2025
+Copyright (c) 2019-present, The Open English WordNet Team.
+Derived from Princeton WordNet 3.1.
+Licensed under Creative Commons Attribution 4.0 International.
+Source: https://en-word.net/
+License: https://creativecommons.org/licenses/by/4.0/
+
+CMU Pronouncing Dictionary
+Copyright (C) 1993-2015 Carnegie Mellon University.
+Used under the license reproduced in CMUdict-LICENSE.txt.
+Source: https://github.com/cmusphinx/cmudict
+Pinned revision: 74790861f652b15e4ac49015a90074ad62a27690
+
+Apple Translation and AVSpeechSynthesizer are system frameworks. Their
+language models and voices are supplied and managed by macOS.

@@ -44,11 +44,23 @@ public struct TranslationMeaningGroup: Equatable, Sendable {
 
 public struct TranslationEnrichment: Equatable, Sendable {
     public let phonetic: String?
+    public let pronunciations: [EnglishPronunciation]
     public let groups: [TranslationMeaningGroup]
 
-    public init(phonetic: String? = nil, groups: [TranslationMeaningGroup]) {
+    public init(
+        phonetic: String? = nil,
+        pronunciations: [EnglishPronunciation] = [],
+        groups: [TranslationMeaningGroup]
+    ) {
         self.phonetic = phonetic?.nilIfEmpty
+        self.pronunciations = Array(pronunciations.prefix(3))
         self.groups = Array(groups.prefix(3))
+    }
+
+    public var displayPronunciations: [EnglishPronunciation] {
+        if !pronunciations.isEmpty { return pronunciations }
+        guard let phonetic else { return [] }
+        return [EnglishPronunciation(phonetic: phonetic)]
     }
 
     public func merging(englishDictionary: EnglishDictionaryEnrichment?) -> TranslationEnrichment {
@@ -69,6 +81,7 @@ public struct TranslationEnrichment: Equatable, Sendable {
         }
         return TranslationEnrichment(
             phonetic: englishDictionary.phoneticDisplay ?? phonetic,
+            pronunciations: englishDictionary.pronunciations,
             groups: mergedGroups
         )
     }
@@ -286,7 +299,11 @@ public enum TranslationContextBatchParser {
                 groups[snippet.groupIndex] = group.replacing(definition: nil, example: value)
             }
         }
-        return TranslationEnrichment(phonetic: enrichment.phonetic, groups: groups)
+        return TranslationEnrichment(
+            phonetic: enrichment.phonetic,
+            pronunciations: enrichment.pronunciations,
+            groups: groups
+        )
     }
 }
 
