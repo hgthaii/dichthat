@@ -76,3 +76,9 @@ bash scripts/build-dmg.sh
 ```
 
 App nằm tại `/private/tmp/dichthat-app/DichThat.app`; DMG nằm trong `dist/`.
+
+## Mời mình một ly cà phê
+
+Nếu DichThat hữu ích với bạn, hãy ủng hộ mình một ly cà phê nhé:
+
+[☕ Buy me a coffee](https://www.buymeacoffee.com/hgthaii)
