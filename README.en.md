@@ -76,3 +76,9 @@ bash scripts/build-dmg.sh
 ```
 
 The app is written to `/private/tmp/dichthat-app/DichThat.app`; the DMG is written to `dist/`.
+
+## Support
+
+If you find DichThat useful, you can support its development:
+
+[☕ Buy me a coffee](https://www.buymeacoffee.com/hgthaii)
