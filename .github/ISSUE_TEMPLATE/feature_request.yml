@@ -1,0 +1,37 @@
+name: Feature request
+description: Suggest a focused improvement to DichThat.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem should this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful behavior and expected interaction.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This request keeps DichThat focused on English and Vietnamese translation.
+          required: true
+        - label: This request does not require storing selected text, clipboard contents, or translation history.
+          required: true

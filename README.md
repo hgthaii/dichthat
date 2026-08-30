@@ -76,9 +76,17 @@ bash scripts/build-dmg.sh
 
 App nằm tại `/private/tmp/dichthat-app/DichThat.app`; DMG nằm trong `dist/`.
 
+Xem [cây thư mục dự án](PROJECT_STRUCTURE.md) và [sơ đồ luồng tính năng](MDD.md) để hiểu nhanh kiến trúc source code.
+
 ## Đóng góp
 
-Issue và pull request đều được chào đón. Hãy giữ thay đổi tập trung, không đưa nội dung người dùng vào log hoặc test fixture, đồng thời chạy `swift test` và các lệnh build liên quan trước khi gửi pull request.
+Issue và pull request đều được chào đón. Hãy đọc [hướng dẫn đóng góp](CONTRIBUTING.md), giữ thay đổi tập trung, không đưa nội dung người dùng vào log hoặc test fixture, đồng thời chạy `swift test` và các lệnh build liên quan trước khi gửi pull request.
+
+Nếu phát hiện lỗ hổng bảo mật, vui lòng làm theo [chính sách bảo mật](SECURITY.md) thay vì mở issue công khai.
+
+## Giấy phép
+
+DichThat được phát hành theo [MIT License](LICENSE).
 
 ## Mời mình một ly cà phê
 

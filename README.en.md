@@ -76,9 +76,17 @@ bash scripts/build-dmg.sh
 
 The app is written to `/private/tmp/dichthat-app/DichThat.app`; the DMG is written to `dist/`.
 
+See the [project tree](PROJECT_STRUCTURE.md) and [feature flow diagrams](MDD.md) for a quick guide to the source architecture.
+
 ## Contributing
 
-Issues and pull requests are welcome. Keep changes focused, never include user content in logs or test fixtures, and run `swift test` plus the relevant build commands before opening a pull request.
+Issues and pull requests are welcome. Read the [contribution guide](CONTRIBUTING.md), keep changes focused, never include user content in logs or test fixtures, and run `swift test` plus the relevant build commands before opening a pull request.
+
+If you discover a vulnerability, follow the [security policy](SECURITY.md) instead of opening a public issue.
+
+## License
+
+DichThat is released under the [MIT License](LICENSE).
 
 ## Support
 
