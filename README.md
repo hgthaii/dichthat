@@ -26,7 +26,7 @@
 DichThat là ứng dụng nhỏ nằm trên menu bar của macOS. Bạn chỉ cần chọn một đoạn chữ, nhấn phím tắt và xem bản dịch ngay bên cạnh — không cần chuyển sang ứng dụng khác.
 
 Ứng dụng tự nhận biết tiếng Anh hoặc tiếng Việt và dịch sang ngôn ngữ còn lại.
-Bản phát hành hỗ trợ cả máy Mac Apple Silicon và Intel chạy macOS 26 trở lên.
+Bản phát hành hỗ trợ máy Mac dùng chip Apple và các máy Mac Intel tương thích với macOS 26 trở lên.
 
 ## Tính năng chính
 
@@ -70,12 +70,23 @@ Yêu cầu macOS 26 trở lên và Swift 6.
 ```bash
 swift test
 bash scripts/build-offline-dictionary.sh # chỉ cần khi cập nhật nguồn dữ liệu
-bash scripts/build-app.sh
-bash scripts/verify-app.sh
+bash scripts/app.sh build-and-verify
 bash scripts/build-dmg.sh
 ```
 
 App nằm tại `/private/tmp/dichthat-app/DichThat.app`; DMG nằm trong `dist/`.
+
+Xem [cây thư mục dự án](PROJECT_STRUCTURE.md) và [sơ đồ luồng tính năng](MDD.md) để hiểu nhanh kiến trúc source code.
+
+## Đóng góp
+
+Issue và pull request đều được chào đón. Hãy đọc [hướng dẫn đóng góp](CONTRIBUTING.md), giữ thay đổi tập trung, không đưa nội dung người dùng vào log hoặc test fixture, đồng thời chạy `swift test` và các lệnh build liên quan trước khi gửi pull request.
+
+Nếu phát hiện lỗ hổng bảo mật, vui lòng làm theo [chính sách bảo mật](SECURITY.md) thay vì mở issue công khai.
+
+## Giấy phép
+
+DichThat được phát hành theo [MIT License](LICENSE).
 
 ## Mời mình một ly cà phê
 

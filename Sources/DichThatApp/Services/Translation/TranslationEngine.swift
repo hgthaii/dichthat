@@ -66,7 +66,7 @@ struct TranslationEngine: Sendable {
     }
 
     private func localized(enrichment: TranslationEnrichment) async -> TranslationEnrichment {
-        let snippets = TranslationContextBatchBuilder.snippets(from: enrichment)
+        let snippets = TranslationContextSnippetBuilder.snippets(from: enrichment)
         guard !snippets.isEmpty else { return enrichment }
         let texts = snippets.map(\.text)
         guard case let .success(values) = await provider.translate(
