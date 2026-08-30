@@ -219,11 +219,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             statusMenu.appearance = AdaptiveAppIcon.systemAppearance(
                 fallback: NSApplication.shared.effectiveAppearance
             )
-            statusMenu.popUp(
-                positioning: nil,
-                at: NSPoint(x: 0, y: 0),
-                in: sender
-            )
+            statusItem?.menu = statusMenu
+            sender.performClick(nil)
+            statusItem?.menu = nil
             return
         }
         let anchor = statusButtonAnchor(sender)

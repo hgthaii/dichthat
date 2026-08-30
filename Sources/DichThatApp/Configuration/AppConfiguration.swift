@@ -98,23 +98,23 @@ enum AppConfiguration {
     }
 
     enum Settings {
-        static let windowWidth: CGFloat = 480
-        static let windowHeight: CGFloat = 400
-        static let contentInset: CGFloat = 24
-        static let sectionSpacing: CGFloat = 18
-        static let rowHeight: CGFloat = 64
+        static let windowWidth: CGFloat = 440
+        static let windowHeight: CGFloat = 370
+        static let contentInset: CGFloat = 20
+        static let sectionSpacing: CGFloat = 14
+        static let rowHeight: CGFloat = 58
         static let cardRadius: CGFloat = 10
         static let cardBorderWidth: CGFloat = 1
-        static let permissionHeight: CGFloat = 54
-        static let shortcutHeight: CGFloat = 112
-        static let tabWidth: CGFloat = 74
-        static let tabHeight: CGFloat = 28
-        static let headerHeight: CGFloat = 76
+        static let permissionHeight: CGFloat = 50
+        static let shortcutHeight: CGFloat = 98
+        static let tabWidth: CGFloat = 70
+        static let tabHeight: CGFloat = 26
+        static let headerHeight: CGFloat = 70
         static let toggleWidth: CGFloat = 36
         static let toggleHeight: CGFloat = 20
         static let toggleInset: CGFloat = 2
-        static let aboutIconSize: CGFloat = 52
-        static let updateCardWidth: CGFloat = 360
-        static let updateCardHeight: CGFloat = 52
+        static let aboutIconSize: CGFloat = 48
+        static let updateCardWidth: CGFloat = 330
+        static let updateCardHeight: CGFloat = 48
     }
 }

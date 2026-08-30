@@ -236,7 +236,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         rootView.addSubview(headerSeparator)
         rootView.addSubview(contentHost)
         NSLayoutConstraint.activate([
-            tabBackground.topAnchor.constraint(equalTo: rootView.topAnchor, constant: 40),
+            tabBackground.topAnchor.constraint(equalTo: rootView.topAnchor, constant: 36),
             tabBackground.centerXAnchor.constraint(equalTo: rootView.centerXAnchor),
             tabs.leadingAnchor.constraint(equalTo: tabBackground.leadingAnchor, constant: 1),
             tabs.trailingAnchor.constraint(equalTo: tabBackground.trailingAnchor, constant: -1),
@@ -255,10 +255,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
                 constant: AppConfiguration.Settings.headerHeight
             ),
             headerSeparator.heightAnchor.constraint(equalToConstant: 1),
-            contentHost.leadingAnchor.constraint(equalTo: rootView.leadingAnchor, constant: 24),
-            contentHost.trailingAnchor.constraint(equalTo: rootView.trailingAnchor, constant: -24),
+            contentHost.leadingAnchor.constraint(
+                equalTo: rootView.leadingAnchor,
+                constant: AppConfiguration.Settings.contentInset
+            ),
+            contentHost.trailingAnchor.constraint(
+                equalTo: rootView.trailingAnchor,
+                constant: -AppConfiguration.Settings.contentInset
+            ),
             contentHost.topAnchor.constraint(equalTo: headerSeparator.bottomAnchor),
-            contentHost.bottomAnchor.constraint(equalTo: rootView.bottomAnchor, constant: -20),
+            contentHost.bottomAnchor.constraint(equalTo: rootView.bottomAnchor, constant: -16),
         ])
 
         configureGeneralView()
@@ -300,7 +306,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: generalView.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: generalView.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: generalView.topAnchor, constant: 24),
+            stack.topAnchor.constraint(equalTo: generalView.topAnchor, constant: 18),
         ] + arranged.map { $0.widthAnchor.constraint(equalTo: stack.widthAnchor) })
     }
 
@@ -518,7 +524,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         dataSourcesView.addSubview(dataSourcesCard)
         NSLayoutConstraint.activate([
             title.leadingAnchor.constraint(equalTo: dataSourcesView.leadingAnchor),
-            title.topAnchor.constraint(equalTo: dataSourcesView.topAnchor, constant: 24),
+            title.topAnchor.constraint(equalTo: dataSourcesView.topAnchor, constant: 18),
             dataSourcesCard.leadingAnchor.constraint(equalTo: dataSourcesView.leadingAnchor),
             dataSourcesCard.trailingAnchor.constraint(equalTo: dataSourcesView.trailingAnchor),
             dataSourcesCard.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 12),
