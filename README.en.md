@@ -26,7 +26,7 @@
 DichThat is a small macOS menu-bar app. Select some text, press a shortcut, and read the translation next to it—without switching to another app.
 
 It automatically detects English or Vietnamese and translates into the other language.
-Releases support both Apple Silicon and Intel Macs running macOS 26 or later.
+Releases support Macs with Apple silicon and Intel Macs compatible with macOS 26 or later.
 
 ## Highlights
 
@@ -76,6 +76,10 @@ bash scripts/build-dmg.sh
 ```
 
 The app is written to `/private/tmp/dichthat-app/DichThat.app`; the DMG is written to `dist/`.
+
+## Contributing
+
+Issues and pull requests are welcome. Keep changes focused, never include user content in logs or test fixtures, and run `swift test` plus the relevant build commands before opening a pull request.
 
 ## Support
 

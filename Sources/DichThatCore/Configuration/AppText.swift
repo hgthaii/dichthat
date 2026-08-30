@@ -58,9 +58,6 @@ public enum AppText {
         public static var closeAccessibility: String {
             localized("Close translation", "Đóng bản dịch")
         }
-        public static var sourceWordSpeechAccessibility: String {
-            localized("Pronounce source word", "Phát âm từ gốc")
-        }
         public static var pronunciationSpeechAccessibility: String {
             localized("Play US pronunciation", "Nghe phát âm Anh–Mỹ")
         }
@@ -107,7 +104,6 @@ public enum AppText {
                 "Không thể tải ngôn ngữ dịch. Hãy thử lại."
             )
         }
-        public static var openSettings: String { localized("Open Settings", "Mở Cài đặt") }
         public static var shortcutTitle: String { localized("Keyboard Shortcut", "Phím tắt") }
         public static var shortcutSubtitle: String {
             localized(
@@ -119,10 +115,6 @@ public enum AppText {
             localized("Shortcut letter or number", "Chữ hoặc số của phím tắt")
         }
         public static var shortcutKeyPlaceholder: String { localized("KEY", "PHÍM") }
-        public static var selectionTitle: String { localized("Selection icon", "Biểu tượng chọn chữ") }
-        public static var selectionSubtitle: String {
-            localized("Show after dragging to select text", "Hiện sau khi kéo để chọn nội dung")
-        }
         public static var launchAtLoginTitle: String {
             localized("Launch at login", "Mở khi đăng nhập")
         }
@@ -131,9 +123,6 @@ public enum AppText {
                 "Start DichThat automatically when you sign in to macOS",
                 "Tự động mở DichThat khi bạn đăng nhập macOS"
             )
-        }
-        public static var checkForUpdates: String {
-            localized("Check for Updates", "Kiểm tra cập nhật")
         }
         public static var reportABug: String { localized("Report a Bug", "Báo lỗi") }
         public static var dataSourcesTab: String { localized("Data", "Dữ liệu") }
@@ -163,23 +152,6 @@ public enum AppText {
                 "Cho phép DichThat trong Cài đặt hệ thống → Cài đặt chung → Mục đăng nhập."
             )
         }
-        public static var record: String { localized("Record", "Ghi nhận") }
-        public static var typeShortcut: String { localized("Type shortcut", "Nhập phím tắt") }
-        public static var escapeToCancel: String { localized("Esc to cancel", "Esc để huỷ") }
-        public static var saved: String { localized("Saved", "Đã lưu") }
-        public static var shortcutRecorderAccessibility: String {
-            localized("Keyboard shortcut recorder", "Trình ghi phím tắt")
-        }
-        public static var unsupportedShortcut: String {
-            localized("Unsupported", "Không được hỗ trợ")
-        }
-        public static var addShortcutModifier: String {
-            localized("Add ⌘, ⌥, or ⌃", "Thêm ⌘, ⌥ hoặc ⌃")
-        }
-        public static var chooseAnotherKey: String {
-            localized("Choose another key", "Chọn phím khác")
-        }
-
         public static func shortcutRegistrationFailed(_ detail: String) -> String {
             localized("Shortcut registration failed", "Đăng ký phím tắt thất bại") + ": \(detail)"
         }
@@ -323,22 +295,5 @@ public enum AppText {
                 "Chọn một chữ cái A–Z hoặc số 0–9."
             )
         }
-    }
-
-    public enum PartOfSpeech {
-        public static let localized: [String: String] = [
-            "noun": "danh từ",
-            "adjective": "tính từ",
-            "verb": "động từ",
-            "adverb": "trạng từ",
-            "pronoun": "đại từ",
-            "preposition": "giới từ",
-            "conjunction": "liên từ",
-            "interjection": "thán từ",
-            "exclamation": "thán từ",
-            "determiner": "từ hạn định",
-            "article": "mạo từ",
-            "numeral": "số từ",
-        ]
     }
 }

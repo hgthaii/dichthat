@@ -44,6 +44,7 @@ build_architecture() {
         --cache-path "${package_cache_path}" \
         --scratch-path "${scratch_path}" \
         --configuration release \
+        --product DichThat \
         --triple "${architecture}-apple-macosx"
 }
 
@@ -81,7 +82,6 @@ install -m 644 "${repository_root}/Resources/Info.plist" "${app_path}/Contents/I
 install -m 644 "${repository_root}/Resources/AppIcon.icns" "${app_path}/Contents/Resources/AppIcon.icns"
 install -m 644 "${repository_root}/Resources/AppIconDark.png" "${app_path}/Contents/Resources/AppIconDark.png"
 install -m 644 "${repository_root}/Resources/AppIconLight.png" "${app_path}/Contents/Resources/AppIconLight.png"
-install -m 644 "${repository_root}/Resources/BrandDT.png" "${app_path}/Contents/Resources/BrandDT.png"
 install -m 644 "${repository_root}/Resources/StatusItemTemplate.png" "${app_path}/Contents/Resources/StatusItemTemplate.png"
 install -m 644 "${installer_background_path}" "${app_path}/Contents/Resources/InstallerBackground.png"
 install -m 644 "${repository_root}/Resources/OfflineDictionary.sqlite" \

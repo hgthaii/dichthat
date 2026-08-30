@@ -44,8 +44,6 @@ public struct SelectionCaptureOutput: Equatable, Sendable {
         self.method = method
         self.anchor = anchor
     }
-
-    public var characterCount: Int { text.count }
 }
 
 public enum SelectionCaptureError: Error, Equatable, Sendable {

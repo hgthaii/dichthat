@@ -21,6 +21,9 @@ Icon
 # Xcode user settings
 xcuserdata/
 
+# Local editor settings
+.vscode/
+
 # Xcode build data
 DerivedData/
 
@@ -44,5 +47,4 @@ timeline.xctimeline
 playground.xcworkspace
 
 # Swift Package Manager
-# Package.resolved
 .build/

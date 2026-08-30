@@ -8,8 +8,6 @@ enum AppConfiguration {
     }
 
     enum Resources {
-        static let brandSourceName = "BrandDT"
-        static let appIconFilename = "AppIcon.icns"
         static let darkAppIconName = "AppIconDark"
         static let lightAppIconName = "AppIconLight"
         static let adaptiveAppIconExtension = "png"
@@ -73,8 +71,6 @@ enum AppConfiguration {
         static let sourceWordFontSize: CGFloat = 21
         static let sourceWordSpacing: CGFloat = 2
         static let phoneticFontSize: CGFloat = 12
-        static let accentLabelFontSize: CGFloat = 10
-        static let accentLabelWidth: CGFloat = 22
         static let pronunciationRowSpacing: CGFloat = 5
         static let sourceRowSpacing: CGFloat = 7
         static let meaningFontSize: CGFloat = 13
@@ -82,11 +78,8 @@ enum AppConfiguration {
         static let meaningSpacing: CGFloat = 4
         static let synonymFontSize: CGFloat = 11
         static let translationFontSize: CGFloat = 13
-        static let translationSpacing: CGFloat = 3
         static let sectionFontSize: CGFloat = 11
-        static let sectionDividerSpacing: CGFloat = 8
         static let badgeFontSize: CGFloat = 10
-        static let badgeVerticalInset: CGFloat = 3
         static let badgeHorizontalInset: CGFloat = 7
         static let badgeCornerRadius: CGFloat = 6
         static let badgeMinimumHeight: CGFloat = 20

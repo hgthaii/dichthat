@@ -6,10 +6,6 @@ final class TranslationSpeechController {
     private let synthesizer = AVSpeechSynthesizer()
     private var state = TranslationSpeechState()
 
-    func isVoiceAvailable(for language: SupportedLanguage) -> Bool {
-        AVSpeechSynthesisVoice(language: language.speechVoiceCode) != nil
-    }
-
     func availableVoiceCodes(for language: SupportedLanguage) -> Set<String> {
         let code = language.speechVoiceCode
         return AVSpeechSynthesisVoice(language: code) == nil ? [] : [code]
