@@ -70,8 +70,7 @@ Requires macOS 26 or later and Swift 6.
 ```bash
 swift test
 bash scripts/build-offline-dictionary.sh # only when refreshing dictionary data
-bash scripts/build-app.sh
-bash scripts/verify-app.sh
+bash scripts/app.sh build-and-verify
 bash scripts/build-dmg.sh
 ```
 

@@ -70,8 +70,7 @@ Yêu cầu macOS 26 trở lên và Swift 6.
 ```bash
 swift test
 bash scripts/build-offline-dictionary.sh # chỉ cần khi cập nhật nguồn dữ liệu
-bash scripts/build-app.sh
-bash scripts/verify-app.sh
+bash scripts/app.sh build-and-verify
 bash scripts/build-dmg.sh
 ```
 

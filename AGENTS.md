@@ -86,8 +86,7 @@ Run validation in proportion to the change. The standard commands are:
 
 ```bash
 swift test
-bash scripts/build-app.sh
-bash scripts/verify-app.sh
+bash scripts/app.sh build-and-verify
 bash scripts/build-dmg.sh
 ```
 

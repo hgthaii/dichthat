@@ -18,8 +18,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-bash "${repository_root}/scripts/build-app.sh"
-bash "${repository_root}/scripts/verify-app.sh"
+bash "${repository_root}/scripts/app.sh" build-and-verify
 output_path="${output_directory}/DichThat.dmg"
 mkdir -p "$(dirname "${output_path}")"
 /usr/bin/ditto \

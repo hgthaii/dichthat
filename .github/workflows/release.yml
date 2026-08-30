@@ -40,10 +40,10 @@ jobs:
         run: swift test
 
       - name: Build app bundle
-        run: bash scripts/build-app.sh
+        run: bash scripts/app.sh build
 
       - name: Verify app bundle
-        run: bash scripts/verify-app.sh
+        run: bash scripts/app.sh verify
 
       - name: Archive app bundle
         run: |
@@ -90,7 +90,7 @@ jobs:
         env:
           DICHTHAT_SIGNING_CERTIFICATE_P12_BASE64: ${{ secrets.DICHTHAT_SIGNING_CERTIFICATE_P12_BASE64 }}
           DICHTHAT_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.DICHTHAT_SIGNING_CERTIFICATE_PASSWORD }}
-        run: bash scripts/import-signing-certificate.sh
+        run: bash scripts/signing-certificate.sh import
 
       - name: Build and verify DMG
         run: bash scripts/build-dmg.sh
@@ -107,11 +107,11 @@ jobs:
       - name: Build signed Sparkle update
         env:
           SPARKLE_EDDSA_PRIVATE_KEY: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY }}
-        run: bash scripts/build-update.sh
+        run: bash scripts/release.sh build-update
 
       - name: Verify release artifacts
         run: |
-          bash scripts/verify-release.sh \
+          bash scripts/release.sh verify \
             "dist/DichThat.dmg" \
             "dist/DichThat-${DICHTHAT_VERSION}.zip" \
             "dist/appcast.xml"
