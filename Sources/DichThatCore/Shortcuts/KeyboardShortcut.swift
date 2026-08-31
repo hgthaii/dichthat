@@ -31,10 +31,17 @@ public struct KeyboardShortcut: Codable, Equatable, Sendable {
         self.modifiers = modifiers
     }
 
-    public static let defaultShortcut = KeyboardShortcut(
-        keyCode: 17,
-        modifiers: [.control, .option]
+    public static let defaultQuickTranslateShortcut = KeyboardShortcut(
+        keyCode: 6,
+        modifiers: [.option, .shift]
     )
+
+    public static let defaultInputShortcut = KeyboardShortcut(
+        keyCode: 6,
+        modifiers: [.control, .option, .shift]
+    )
+
+    public static let defaultShortcut = defaultQuickTranslateShortcut
 
     public func validate() throws(ValidationError) {
         guard modifiers.subtracting(.supported).isEmpty else {

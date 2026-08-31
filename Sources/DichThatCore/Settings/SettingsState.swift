@@ -19,6 +19,8 @@ public struct SettingsState: Equatable, Sendable {
     public private(set) var translationLanguagesError: String?
     public private(set) var shortcutDisplay: String
     public private(set) var shortcutError: String?
+    public private(set) var inputShortcutDisplay: String
+    public private(set) var inputShortcutError: String?
     public private(set) var showSelectionIcon: Bool
     public private(set) var selectionIconStatus: SelectionIconSettingsStatus
     public private(set) var launchAtLoginEnabled: Bool
@@ -31,6 +33,8 @@ public struct SettingsState: Equatable, Sendable {
         translationLanguagesError: String? = nil,
         shortcutDisplay: String,
         shortcutError: String? = nil,
+        inputShortcutDisplay: String = KeyboardShortcut.defaultInputShortcut.displayText,
+        inputShortcutError: String? = nil,
         showSelectionIcon: Bool,
         selectionIconStatus: SelectionIconSettingsStatus = .disabled,
         launchAtLoginEnabled: Bool = false,
@@ -42,6 +46,8 @@ public struct SettingsState: Equatable, Sendable {
         self.translationLanguagesError = translationLanguagesError
         self.shortcutDisplay = shortcutDisplay
         self.shortcutError = shortcutError
+        self.inputShortcutDisplay = inputShortcutDisplay
+        self.inputShortcutError = inputShortcutError
         self.showSelectionIcon = showSelectionIcon
         self.selectionIconStatus = selectionIconStatus
         self.launchAtLoginEnabled = launchAtLoginEnabled
@@ -63,6 +69,11 @@ public struct SettingsState: Equatable, Sendable {
     public mutating func updateShortcut(display: String, error: String? = nil) {
         shortcutDisplay = display
         shortcutError = error
+    }
+
+    public mutating func updateInputShortcut(display: String, error: String? = nil) {
+        inputShortcutDisplay = display
+        inputShortcutError = error
     }
 
     public mutating func updateTranslationLanguagesReady(_ isReady: Bool) {

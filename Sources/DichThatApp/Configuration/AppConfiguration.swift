@@ -98,23 +98,32 @@ enum AppConfiguration {
     }
 
     enum Settings {
-        static let windowWidth: CGFloat = 440
-        static let windowHeight: CGFloat = 370
-        static let contentInset: CGFloat = 20
-        static let sectionSpacing: CGFloat = 14
-        static let rowHeight: CGFloat = 58
-        static let cardRadius: CGFloat = 10
+        static let windowWidth: CGFloat = 480
+        static let windowHeight: CGFloat = 540
+        static let compactGeneralWindowHeight: CGFloat = 440
+        static let aboutWindowHeight: CGFloat = 440
+        static let dataSourcesWindowHeight: CGFloat = 456
+        static let contentInset: CGFloat = 32
+        static let sectionSpacing: CGFloat = 10
+        static let rowHeight: CGFloat = 56
+        static let cardRadius: CGFloat = 12
         static let cardBorderWidth: CGFloat = 1
-        static let permissionHeight: CGFloat = 50
-        static let shortcutHeight: CGFloat = 98
-        static let tabWidth: CGFloat = 70
-        static let tabHeight: CGFloat = 26
-        static let headerHeight: CGFloat = 70
+        static let permissionHeight: CGFloat = 94
+        static let permissionActionHeight: CGFloat = 36
+        static let shortcutHeight: CGFloat = 72
+        static let shortcutEditorWidth: CGFloat = 226
+        static let shortcutKeyVerticalOffset: CGFloat = 2
+        static let tabWidth: CGFloat = 76
+        static let tabHeight: CGFloat = 32
+        static let headerHeight: CGFloat = 66
         static let toggleWidth: CGFloat = 36
         static let toggleHeight: CGFloat = 20
         static let toggleInset: CGFloat = 2
-        static let aboutIconSize: CGFloat = 48
-        static let updateCardWidth: CGFloat = 330
-        static let updateCardHeight: CGFloat = 48
+        static let tabAnimationDuration: CFTimeInterval = 0.20
+        static let buttonAnimationDuration: CFTimeInterval = 0.15
+        static let buttonHoverScale: CGFloat = 1.015
+        static let buttonPressedScale: CGFloat = 0.965
+        static let aboutIconSize: CGFloat = 64
+        static let updateCardHeight: CGFloat = 66
     }
 }

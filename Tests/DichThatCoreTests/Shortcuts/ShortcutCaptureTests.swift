@@ -4,8 +4,8 @@ import Testing
 @Test("Capture maps event flags to a valid semantic shortcut")
 func captureMapsFlagsToShortcut() {
     let result = ShortcutCapture.makeCandidate(
-        keyCode: 17,
-        modifierFlags: [.control, .option]
+        keyCode: 6,
+        modifierFlags: [.option, .shift]
     )
     #expect(result == .valid(.defaultShortcut))
 }

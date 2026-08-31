@@ -15,15 +15,18 @@ public final class ShortcutPreferences: ShortcutPersisting {
 
     private let defaults: UserDefaults
     private let storageKey: String
+    private let fallbackShortcut: KeyboardShortcut
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
     public init(
         defaults: UserDefaults = .standard,
-        storageKey: String = ShortcutPreferences.storageKey
+        storageKey: String = ShortcutPreferences.storageKey,
+        fallbackShortcut: KeyboardShortcut = .defaultShortcut
     ) {
         self.defaults = defaults
         self.storageKey = storageKey
+        self.fallbackShortcut = fallbackShortcut
     }
 
     public func loadShortcut() -> KeyboardShortcut {
@@ -32,7 +35,7 @@ public final class ShortcutPreferences: ShortcutPersisting {
             let shortcut = try? decoder.decode(KeyboardShortcut.self, from: data),
             (try? shortcut.validate()) != nil
         else {
-            return .defaultShortcut
+            return fallbackShortcut
         }
         return shortcut
     }

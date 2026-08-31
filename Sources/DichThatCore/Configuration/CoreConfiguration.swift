@@ -3,6 +3,7 @@ import Foundation
 public enum CoreConfiguration {
     public enum PreferenceKeys {
         public static let globalKeyboardShortcut = "globalKeyboardShortcut"
+        public static let inputKeyboardShortcut = "inputKeyboardShortcut"
         public static let showSelectionIcon = "showSelectionIconWhenTextIsSelected"
     }
 

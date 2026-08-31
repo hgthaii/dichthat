@@ -22,8 +22,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let appearanceObserver = AppearanceObserverView(frame: .zero)
     private let statusMenu = NSMenu()
     private var settingsController: SettingsWindowController?
-    private let shortcutRegistrar = CarbonGlobalShortcutRegistrar()
+    private let shortcutRegistrar = CarbonGlobalShortcutRegistrar(initialHotKeyID: 1)
+    private let inputShortcutRegistrar = CarbonGlobalShortcutRegistrar(
+        signature: 0x4449_4349, // DICI
+        initialHotKeyID: 1
+    )
     private let shortcutPreferences = ShortcutPreferences()
+    private let inputShortcutPreferences = ShortcutPreferences(
+        storageKey: CoreConfiguration.PreferenceKeys.inputKeyboardShortcut,
+        fallbackShortcut: .defaultInputShortcut
+    )
     private let appPreferences = AppPreferences()
     private let launchAtLoginService = LaunchAtLoginService()
     private let updateCoordinator = UpdateCoordinator()
@@ -46,9 +54,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private lazy var translationEngine = TranslationEngine(provider: appleTranslationProvider)
     private var isTerminating = false
     private var currentShortcut = KeyboardShortcut.defaultShortcut
+    private var currentInputShortcut = KeyboardShortcut.defaultInputShortcut
     private var settingsState = SettingsState(
         accessibilityGranted: false,
         shortcutDisplay: KeyboardShortcut.defaultShortcut.displayText,
+        inputShortcutDisplay: KeyboardShortcut.defaultInputShortcut.displayText,
         showSelectionIcon: AppConfiguration.Features.selectionIconEnabled
             && AppPreferences.defaultShowSelectionIcon
     )
@@ -58,6 +68,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private lazy var shortcutConfiguration = ShortcutConfiguration(
         registrar: shortcutRegistrar,
         preferences: shortcutPreferences
+    )
+    private lazy var inputShortcutHandler: @MainActor () -> Void = { [weak self] in
+        self?.inputShortcutDidFire()
+    }
+    private lazy var inputShortcutConfiguration = ShortcutConfiguration(
+        registrar: inputShortcutRegistrar,
+        preferences: inputShortcutPreferences
     )
     private lazy var selectionObservation = SelectionObservationController(
         statusChanged: { [weak self] status in
@@ -102,12 +119,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         let loadedShortcut = shortcutPreferences.loadShortcut()
+        let loadedInputShortcut = inputShortcutPreferences.loadShortcut()
         currentShortcut = loadedShortcut
+        currentInputShortcut = loadedInputShortcut
         let accessibilityGranted = AXIsProcessTrusted()
         lastKnownAccessibilityTrust = accessibilityGranted
         settingsState = SettingsState(
             accessibilityGranted: accessibilityGranted,
             shortcutDisplay: loadedShortcut.displayText,
+            inputShortcutDisplay: loadedInputShortcut.displayText,
             showSelectionIcon: AppConfiguration.Features.selectionIconEnabled
                 && appPreferences.loadShowSelectionIcon(),
             launchAtLoginEnabled: launchAtLoginService.isEnabled
@@ -121,6 +141,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case let .failure(error):
             settingsState.updateShortcut(
                 display: loadedShortcut.displayText,
+                error: AppText.Settings.shortcutRegistrationFailed(error.displayText)
+            )
+        }
+        let inputResult = inputShortcutConfiguration.start(handler: inputShortcutHandler)
+        switch inputResult {
+        case let .success(shortcut):
+            currentInputShortcut = shortcut
+            settingsState.updateInputShortcut(display: shortcut.displayText)
+        case let .failure(error):
+            settingsState.updateInputShortcut(
+                display: loadedInputShortcut.displayText,
                 error: AppText.Settings.shortcutRegistrationFailed(error.displayText)
             )
         }
@@ -184,6 +215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         cancelTranslation(hidePanel: true)
         selectionObservation.stop()
         shortcutRegistrar.unregister()
+        inputShortcutRegistrar.unregister()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -199,6 +231,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         cancelTranslation(hidePanel: true)
         selectionObservation.stop()
         shortcutRegistrar.unregister()
+        inputShortcutRegistrar.unregister()
         return .terminateNow
     }
 
@@ -257,6 +290,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 onCommitShortcut: { [weak self] candidate in
                     self?.acceptShortcut(candidate) ?? AppText.Errors.applicationUnavailable
                 },
+                onCommitInputShortcut: { [weak self] candidate in
+                    self?.acceptInputShortcut(candidate) ?? AppText.Errors.applicationUnavailable
+                },
                 onToggleSelectionIcon: { [weak self] isEnabled in
                     self?.setShowSelectionIcon(isEnabled)
                 },
@@ -298,6 +334,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func acceptShortcut(_ candidate: KeyboardShortcut) -> String? {
         guard settingsState.translationLanguagesReady else { return nil }
+        if candidate == currentInputShortcut {
+            let message = AppText.Settings.shortcutConflict(
+                candidate.displayText,
+                usedBy: AppText.Settings.inputShortcutTitle
+            )
+            settingsState.updateShortcut(display: currentShortcut.displayText, error: message)
+            settingsController?.refresh(state: settingsState)
+            return message
+        }
         switch shortcutConfiguration.accept(candidate, handler: shortcutHandler) {
         case let .success(shortcut):
             currentShortcut = shortcut
@@ -311,6 +356,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             )
             settingsController?.refresh(state: settingsState)
             return AppText.Settings.shortcutUnavailable(error.displayText)
+        }
+    }
+
+    private func acceptInputShortcut(_ candidate: KeyboardShortcut) -> String? {
+        guard settingsState.translationLanguagesReady else { return nil }
+        if candidate == currentShortcut {
+            let message = AppText.Settings.shortcutConflict(
+                candidate.displayText,
+                usedBy: AppText.Settings.shortcutTitle
+            )
+            settingsState.updateInputShortcut(
+                display: currentInputShortcut.displayText,
+                error: message
+            )
+            settingsController?.refresh(state: settingsState)
+            return message
+        }
+        switch inputShortcutConfiguration.accept(candidate, handler: inputShortcutHandler) {
+        case let .success(shortcut):
+            currentInputShortcut = shortcut
+            settingsState.updateInputShortcut(display: shortcut.displayText)
+            settingsController?.refresh(state: settingsState)
+            return nil
+        case let .failure(error):
+            settingsState.updateInputShortcut(
+                display: currentInputShortcut.displayText,
+                error: AppText.Settings.shortcutUpdateFailed(error.displayText)
+            )
+            settingsController?.refresh(state: settingsState)
+            return AppText.Settings.shortcutUnavailable(error.displayText)
+        }
+    }
+
+    private func inputShortcutDidFire() {
+        guard settingsState.translationLanguagesReady, !translationPanel.isVisible else { return }
+        let anchor = statusItem.flatMap { $0.button }.map(statusButtonAnchor)
+            ?? .mouse(CapturePoint(x: NSEvent.mouseLocation.x, y: NSEvent.mouseLocation.y))
+        cancelTranslation(hidePanel: true)
+        translationPanel.showInput(anchor: anchor) { [weak self] text in
+            self?.menuBarInputChanged(text, anchor: anchor)
         }
     }
 

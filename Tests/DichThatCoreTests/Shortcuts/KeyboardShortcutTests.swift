@@ -1,13 +1,22 @@
 import Testing
 @testable import DichThatCore
 
-@Test("Default shortcut is Control-Option-T")
-func defaultShortcutIsControlOptionT() throws {
+@Test("Quick Translate defaults to Shift-Option-Z")
+func defaultShortcutIsShiftOptionZ() throws {
     let shortcut = KeyboardShortcut.defaultShortcut
     try shortcut.validate()
-    #expect(shortcut.keyCode == 17)
-    #expect(shortcut.modifiers == [.control, .option])
-    #expect(shortcut.displayText == "⌃⌥T")
+    #expect(shortcut.keyCode == 6)
+    #expect(shortcut.modifiers == [.option, .shift])
+    #expect(shortcut.displayText == "⌥⇧Z")
+}
+
+@Test("Translation input defaults to Control-Option-Shift-Z")
+func defaultInputShortcutIsControlOptionShiftZ() throws {
+    let shortcut = KeyboardShortcut.defaultInputShortcut
+    try shortcut.validate()
+    #expect(shortcut.keyCode == 6)
+    #expect(shortcut.modifiers == [.control, .option, .shift])
+    #expect(shortcut.displayText == "⌃⌥⇧Z")
 }
 
 @Test("Shortcut validation rejects unsafe combinations")
