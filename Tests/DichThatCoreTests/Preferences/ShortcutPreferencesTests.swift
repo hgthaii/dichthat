@@ -51,3 +51,22 @@ func invalidShortcutIsNotPersisted() throws {
     }
     #expect(defaults.object(forKey: ShortcutPreferences.storageKey) == nil)
 }
+
+@Test("A separate shortcut preference uses its own key and fallback")
+func separateShortcutPreferenceUsesOwnKeyAndFallback() throws {
+    let suiteName = "DichThatTests.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let storageKey = CoreConfiguration.PreferenceKeys.inputKeyboardShortcut
+    let preferences = ShortcutPreferences(
+        defaults: defaults,
+        storageKey: storageKey,
+        fallbackShortcut: .defaultInputShortcut
+    )
+
+    #expect(preferences.loadShortcut() == .defaultInputShortcut)
+    let shortcut = KeyboardShortcut(keyCode: 0, modifiers: [.control, .shift])
+    try preferences.saveShortcut(shortcut)
+    #expect(preferences.loadShortcut() == shortcut)
+    #expect(defaults.object(forKey: ShortcutPreferences.storageKey) == nil)
+}

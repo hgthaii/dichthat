@@ -20,9 +20,9 @@ func localizedBrandCopyIsStable() {
     #expect(AppText.Translation.inputPlaceholder(language: .vietnamese) == "Nhập gì đó...")
     #expect(
         AppText.Settings.aboutDescription(language: .english)
-            == "Translate now. Understand truly."
+            == "Translate. Stay in flow."
     )
-    #expect(AppText.Settings.aboutDescription(language: .vietnamese) == "Dịch ngay. Hiểu thật.")
+    #expect(AppText.Settings.aboutDescription(language: .vietnamese) == "Dịch ngay nơi bạn đọc")
 }
 
 @Test("Apple Translation availability guidance is localized")

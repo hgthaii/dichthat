@@ -74,15 +74,17 @@ public enum AppText {
         public static var general: String { localized("General", "Chung") }
         public static var about: String { localized("About", "Giới thiệu") }
         public static var accessibilityTitle: String {
-            localized("Accessibility access required", "Yêu cầu quyền Trợ năng")
+            localized("Accessibility Access Required", "Yêu cầu quyền Trợ năng")
         }
         public static var accessibilityDescription: String {
             localized(
-                "Allow DichThat to read the text you select in other apps.",
-                "Cho phép DichThat đọc nội dung bạn chọn trong ứng dụng khác."
+                "Allow DichThat to read chosen text globally for instant translation shortcuts.",
+                "Cho phép DichThat đọc văn bản bạn chọn trên toàn hệ thống để dịch nhanh."
             )
         }
-        public static var grantAccess: String { localized("Grant Access", "Cấp quyền") }
+        public static var grantAccess: String {
+            localized("Grant Access in Settings", "Mở Cài đặt để cấp quyền")
+        }
         public static var translationLanguagesTitle: String {
             localized("Translation languages required", "Cần tải ngôn ngữ dịch")
         }
@@ -104,11 +106,20 @@ public enum AppText {
                 "Không thể tải ngôn ngữ dịch. Hãy thử lại."
             )
         }
-        public static var shortcutTitle: String { localized("Keyboard Shortcut", "Phím tắt") }
+        public static var shortcutTitle: String { localized("Quick Translate", "Dịch nhanh") }
         public static var shortcutSubtitle: String {
             localized(
-                "Press modifiers to toggle and type one key (A–Z or 0–9) to customize",
-                "Chọn các phím bổ trợ và nhập một ký tự (A–Z hoặc 0–9)"
+                "Translate the text currently selected in another app",
+                "Dịch nhanh văn bản đang chọn trong ứng dụng khác"
+            )
+        }
+        public static var inputShortcutTitle: String {
+            localized("Translation Input", "Nhập nội dung để dịch")
+        }
+        public static var inputShortcutSubtitle: String {
+            localized(
+                "Open the translation input from anywhere",
+                "Mở ô nhập nội dung dịch từ bất kỳ đâu"
             )
         }
         public static var shortcutKeyAccessibility: String {
@@ -116,17 +127,33 @@ public enum AppText {
         }
         public static var shortcutKeyPlaceholder: String { localized("KEY", "PHÍM") }
         public static var launchAtLoginTitle: String {
-            localized("Launch at login", "Mở khi đăng nhập")
+            localized("Launch at login", "Khởi động cùng macOS")
         }
         public static var launchAtLoginSubtitle: String {
             localized(
-                "Start DichThat automatically when you sign in to macOS",
-                "Tự động mở DichThat khi bạn đăng nhập macOS"
+                "Start automatically when you sign in to macOS",
+                "Tự động mở khi bạn đăng nhập macOS"
             )
         }
+        public static var contextTranslationTitle: String {
+            localized("Context-aware translation", "Dịch theo ngữ cảnh")
+        }
+        public static var contextTranslationSubtitle: String {
+            localized(
+                "Use surrounding text for more accurate translations",
+                "Dùng nội dung xung quanh để bản dịch chính xác hơn"
+            )
+        }
+        public static var comingSoon: String { localized("COMING SOON", "SẮP RA MẮT") }
         public static var reportABug: String { localized("Report a Bug", "Báo lỗi") }
         public static var dataSourcesTab: String { localized("Data", "Dữ liệu") }
         public static var dataSources: String { localized("Data Sources", "Nguồn dữ liệu") }
+        public static var dataSourcesDescription: String {
+            localized(
+                "Integrated dictionaries and translation providers used by DichThat",
+                "Các từ điển và dịch vụ dịch thuật được DichThat sử dụng"
+            )
+        }
         public static var dataSourcesUnavailable: String {
             localized("Data source information is unavailable.", "Không thể tải thông tin nguồn dữ liệu.")
         }
@@ -136,8 +163,8 @@ public enum AppText {
         }
         public static func aboutDescription(language: AppLanguage) -> String {
             language.localized(
-                english: "Translate now. Understand truly.",
-                vietnamese: "Dịch ngay. Hiểu thật."
+                english: "Translate. Stay in flow.",
+                vietnamese: "Dịch ngay nơi bạn đọc"
             )
         }
         public static var startupError: String {
@@ -162,6 +189,13 @@ public enum AppText {
 
         public static func shortcutUnavailable(_ detail: String) -> String {
             localized("Could not use shortcut", "Không thể dùng phím tắt") + ": \(detail)"
+        }
+
+        public static func shortcutConflict(_ shortcut: String, usedBy feature: String) -> String {
+            localized(
+                "\(shortcut) is used by \(feature). Choose another.",
+                "\(shortcut) đang dùng cho \(feature). Chọn phím khác."
+            )
         }
     }
 

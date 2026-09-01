@@ -9,10 +9,19 @@ private struct CarbonHotKeyEventSnapshot: Sendable {
 }
 
 private final class CarbonHotKeyEventBridge: Sendable {
+    private let expectedSignature: UInt32
     private let handler: @MainActor @Sendable (CarbonHotKeyEventSnapshot) -> Void
 
-    init(handler: @escaping @MainActor @Sendable (CarbonHotKeyEventSnapshot) -> Void) {
+    init(
+        expectedSignature: UInt32,
+        handler: @escaping @MainActor @Sendable (CarbonHotKeyEventSnapshot) -> Void
+    ) {
+        self.expectedSignature = expectedSignature
         self.handler = handler
+    }
+
+    func accepts(_ snapshot: CarbonHotKeyEventSnapshot) -> Bool {
+        snapshot.signature == expectedSignature
     }
 
     func enqueue(_ snapshot: CarbonHotKeyEventSnapshot) {
@@ -46,6 +55,7 @@ private func carbonGlobalHotKeyEventCallback(
     let bridge = Unmanaged<CarbonHotKeyEventBridge>
         .fromOpaque(context)
         .takeUnretainedValue()
+    guard bridge.accepts(snapshot) else { return OSStatus(eventNotHandledErr) }
     bridge.enqueue(snapshot)
     return noErr
 }
@@ -57,7 +67,16 @@ final class CarbonGlobalShortcutRegistrar: GlobalShortcutRegistering {
     private var hotKey: EventHotKeyRef?
     private var activeHotKeyID: UInt32?
     private var callback: (@MainActor () -> Void)?
-    private var nextHotKeyID: UInt32 = 1
+    private let signature: OSType
+    private var nextHotKeyID: UInt32
+
+    init(
+        signature: OSType = carbonGlobalShortcutSignature,
+        initialHotKeyID: UInt32 = 1
+    ) {
+        self.signature = signature
+        nextHotKeyID = initialHotKeyID
+    }
 
     func replaceRegistration(
         with shortcut: KeyboardShortcut,
@@ -73,7 +92,7 @@ final class CarbonGlobalShortcutRegistrar: GlobalShortcutRegistering {
 
         let candidateID = nextHotKeyID
         nextHotKeyID &+= 1
-        let identifier = EventHotKeyID(signature: carbonGlobalShortcutSignature, id: candidateID)
+        let identifier = EventHotKeyID(signature: signature, id: candidateID)
         var candidateHotKey: EventHotKeyRef?
         let status = RegisterEventHotKey(
             shortcut.keyCode,
@@ -118,9 +137,12 @@ final class CarbonGlobalShortcutRegistrar: GlobalShortcutRegistering {
             eventKind: UInt32(kEventHotKeyPressed)
         )
         var installedHandler: EventHandlerRef?
-        let bridge = CarbonHotKeyEventBridge { [weak self] snapshot in
-            self?.handle(snapshot: snapshot)
-        }
+        let bridge = CarbonHotKeyEventBridge(
+            expectedSignature: signature,
+            handler: { [weak self] snapshot in
+                self?.handle(snapshot: snapshot)
+            }
+        )
         let status = InstallEventHandler(
             GetApplicationEventTarget(),
             carbonGlobalHotKeyEventCallback,
@@ -138,7 +160,7 @@ final class CarbonGlobalShortcutRegistrar: GlobalShortcutRegistering {
 
     private func handle(snapshot: CarbonHotKeyEventSnapshot) {
         guard
-            snapshot.signature == carbonGlobalShortcutSignature,
+            snapshot.signature == signature,
             snapshot.id == activeHotKeyID
         else { return }
         callback?()

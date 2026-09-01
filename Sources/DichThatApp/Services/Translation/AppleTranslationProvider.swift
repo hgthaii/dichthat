@@ -43,6 +43,7 @@ final class AppleTranslationProvider: ObservableObject {
             self.bridgeView = nil
         }
         let view = NSHostingView(rootView: AppleTranslationBridge(provider: self))
+        view.sizingOptions = []
         view.translatesAutoresizingMaskIntoConstraints = false
         view.alphaValue = 0.001
         parent.addSubview(view)
